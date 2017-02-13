@@ -8,46 +8,46 @@ int main()
 {
 	// declarations and definitions
 
-	LARGE_INTEGER ticksPerSecond;   // timer frequency, defined by QueryPerformanceFrequency()
-	LARGE_INTEGER recheckedFrequency;   // timer frequency, checked again each loop
-	LARGE_INTEGER tick;             // tick to get on every loop for timing
-	unsigned __int64 tickFrames;                 // the above in WA frame lengths
+	LARGE_INTEGER ticksPerSecond;												// timer frequency, defined by QueryPerformanceFrequency()
+	LARGE_INTEGER recheckedFrequency;											// timer frequency, checked again each loop
+	LARGE_INTEGER tick;															// tick to get on every loop for timing
+	unsigned __int64 tickFrames;												// the above in WA frame lengths
 
-	char kbState[256];              // array for GetKeyboardState() to dump into
-	HKL kbLayout;
+	char kbState[256];															// array for GetKeyboardState() to dump into
+	HKL kbLayout;																// keyboard layout for GetKeyboardLayout()
 
-	bool laltHeldLast = false;      // whether the space-mashing function key was held in the last loop
-	LARGE_INTEGER laltStart;        // point at which the space-mashing function key began being held
-	unsigned __int64 laltStartFrames;            // laltStart in WA frame lengths
-	LARGE_INTEGER laltTick;        	// point at which the space-mashing function key began being held
-	unsigned __int64 laltTickFrames;             // laltTick in WA frame lengths
-	unsigned __int64 laltHeldFrames;				// number of frames the space-mashing function key was held so far
-	unsigned __int64 lastLaltHeldFrames;			//number of frames the space-mashing function key was held as of the previous loop
+	bool laltHeldLast = false;													// whether the space-mashing function key was held in the last loop
+	LARGE_INTEGER laltStart;													// point at which the space-mashing function key began being held
+	unsigned __int64 laltStartFrames;											// laltStart in WA frame lengths
+	LARGE_INTEGER laltTick;														// point at which the space-mashing function key began being held
+	unsigned __int64 laltTickFrames;											// laltTick in WA frame lengths
+	unsigned __int64 laltHeldFrames;											// number of frames the space-mashing function key was held so far
+	unsigned __int64 lastLaltHeldFrames;										//number of frames the space-mashing function key was held as of the previous loop
 
-	bool leftHeldLast = false;      // whether the left skip-walk function key was held in the last loop
-	bool leftDown = false;          // ..
-	LARGE_INTEGER leftStart;        // point at which the left skip-walk function key began being held
-	unsigned __int64 leftStartFrames;            // leftStart in WA frame lengths
-	LARGE_INTEGER leftTick;         // for comparison between timer query points
-	unsigned __int64 leftTickFrames;             // leftTick in WA frame lengths
-	unsigned __int64 leftHeldFrames;             // length of time the left skip-walk function key was held for
+	bool leftHeldLast = false;													// whether the left skip-walk function key was held in the last loop
+	bool leftDown = false;														// ..
+	LARGE_INTEGER leftStart;													// point at which the left skip-walk function key began being held
+	unsigned __int64 leftStartFrames;											// leftStart in WA frame lengths
+	LARGE_INTEGER leftTick;														// for comparison between timer query points
+	unsigned __int64 leftTickFrames;											// leftTick in WA frame lengths
+	unsigned __int64 leftHeldFrames;											// length of time the left skip-walk function key was held for
 
-	bool rightHeldLast = false;     // whether the right skip-walk function key was held in the last loop
-	bool rightDown = false;         // ..
-	LARGE_INTEGER rightStart;       // point at which the left skip-walk function key began being held
-	unsigned __int64 rightStartFrames;           // rightStart in WA frame lengths
-	LARGE_INTEGER rightTick;        // for comparison between timer query points
-	unsigned __int64 rightTickFrames;            // rightTick in WA frame lengths
-	unsigned __int64 rightHeldFrames;            // length of time the left skip-walk function key was held for
+	bool rightHeldLast = false;													// whether the right skip-walk function key was held in the last loop
+	bool rightDown = false;														// ..
+	LARGE_INTEGER rightStart;													// point at which the left skip-walk function key began being held
+	unsigned __int64 rightStartFrames;											// rightStart in WA frame lengths
+	LARGE_INTEGER rightTick;													// for comparison between timer query points
+	unsigned __int64 rightTickFrames;											// rightTick in WA frame lengths
+	unsigned __int64 rightHeldFrames;											// length of time the left skip-walk function key was held for
 
-	bool alternateHeldLast = false; // whether the arrow-key-alternating function key was held in the last loop
-	bool alternateDown = false;     // ..
-	LARGE_INTEGER alternateStart;   // point at which the arrow-key-alternating function key began being held
-	unsigned __int64 alternateStartFrames;       // alternateStart in WA frame lengths
-	LARGE_INTEGER alternateTick;    // for comparison between timer query points
-	unsigned __int64 alternateTickFrames;        // alternateTick in WA frame lengths
-	unsigned __int64 alternateHeldFrames;        // length of time the arrow-key-alternating function key was held for
-	unsigned __int64 lastAlternateHeldFrames;			//number of frames the arrow-key-alternating function key was held as of the previous loop
+	bool alternateHeldLast = false;												// whether the arrow-key-alternating function key was held in the last loop
+	bool alternateDown = false;													// ..
+	LARGE_INTEGER alternateStart;												// point at which the arrow-key-alternating function key began being held
+	unsigned __int64 alternateStartFrames;										// alternateStart in WA frame lengths
+	LARGE_INTEGER alternateTick;												// for comparison between timer query points
+	unsigned __int64 alternateTickFrames;										// alternateTick in WA frame lengths
+	unsigned __int64 alternateHeldFrames;										// length of time the arrow-key-alternating function key was held for
+	unsigned __int64 lastAlternateHeldFrames;									//number of frames the arrow-key-alternating function key was held as of the previous loop
 
 	if(!QueryPerformanceFrequency(&ticksPerSecond))								// QueryPerformanceFrequency() execution and error check
 	{
@@ -83,7 +83,8 @@ int main()
 	do
 	{
 		//Sleep(1);																			// wait time between input-checking loops (in milliseconds)
-		this_thread::sleep_for(chrono::microseconds(1000));						// same as above, but allowing microsecond precision
+		this_thread::sleep_for(chrono::microseconds(1000));									// same as above, but allowing microsecond precision
+		
 		QueryPerformanceFrequency(&recheckedFrequency);
 		if(ticksPerSecond.QuadPart != recheckedFrequency.QuadPart)
 		{

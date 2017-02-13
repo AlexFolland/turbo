@@ -18,14 +18,25 @@ int main()
 
 	char kbState[256];															// array for GetKeyboardState() to dump into
 	HKL kbLayout;																// keyboard layout for GetKeyboardLayout()
+	/*
+	INPUT inputToSend;													// input to send using SendInput()
+	inputToSend.type = (DWORD)1;												// 0 == INPUT_MOUSE; 1 == INPUT_KEYBOARD; 2 == INPUT_HARDWARE
+	inputToSend
+	KEYBDINPUT keyboardInputToSend;										// keyboard input to be sent as part of the INPUT struct
+	input.ki.wVk = (WORD)0;											// virtual key code to send
+	input.ki.wScan = (WORD)0;										// hardware scan code to send
+	input.ki.dwFlags = (DWORD)0;										// add KEVENTF_KEYUP for keyup; 0 for keydown; add KEYEVENTF_SCANCODE if it's a scancode instead of virtual-key code
+	input.ki.time = (DWORD)0;										// timestamp for the event, in milliseconds		
+	input.ki.dwExtraInfo = (ULONG_PTR)0;								// some additional crap; idk
+	*/
 
 	bool laltHeldLast = false;													// whether the space-mashing function key was held in the last loop
 	LARGE_INTEGER laltStart;													// point at which the space-mashing function key began being held
-	unsigned long long laltStartFrames;											// laltStart in WA frame lengths
+	unsigned long long laltStartFrames = 0;										// laltStart in WA frame lengths
 	LARGE_INTEGER laltTick;														// point at which the space-mashing function key began being held
-	unsigned long long laltTickFrames;											// laltTick in WA frame lengths
-	unsigned long long laltHeldFrames;											// number of frames the space-mashing function key was held so far
-	unsigned long long lastLaltHeldFrames;										// number of frames the space-mashing function key was held as of the previous loop
+	unsigned long long laltTickFrames = 0;										// laltTick in WA frame lengths
+	unsigned long long laltHeldFrames = 0;										// number of frames the space-mashing function key was held so far
+	unsigned long long lastLaltHeldFrames = 0;									// number of frames the space-mashing function key was held as of the previous loop
 
 	bool leftHeldLast = false;													// whether the left skip-walk function key was held in the last loop
 	bool leftDown = false;														// ..
@@ -86,16 +97,16 @@ int main()
 	do
 	{
 		//Sleep(1);																			// wait time between input-checking loops (in milliseconds)
-		this_thread::sleep_for(chrono::microseconds((unsigned long long)floor(1000000LL/(targetGranularity*targetFPS))));									// same as above, but allowing microsecond precision
+		this_thread::sleep_for(chrono::microseconds((unsigned long long)floor(1000000/(targetGranularity*targetFPS))));									// same as above, but allowing microsecond precision
 		
 		QueryPerformanceFrequency(&recheckedFrequency);
-		if(ticksPerSecond.QuadPart != recheckedFrequency.QuadPart)
+		if(ticksPerSecond.LowPart != recheckedFrequency.LowPart)
 		{
 			cout << "QueryPerformanceFrequency returned a different frequency." << endl;
 			ticksPerSecond = recheckedFrequency;
 		}
 		QueryPerformanceCounter(&tick);														// generic tick
-		tickFrames = tick.QuadPart*targetFPS/ticksPerSecond.QuadPart;								// convert to WA frames
+		tickFrames = (unsigned long long)floor((unsigned long long)tick.LowPart*targetFPS/(unsigned long long)ticksPerSecond.LowPart);								// convert to WA frames
 
 		kbLayout = GetKeyboardLayout(0);
 
@@ -131,27 +142,34 @@ int main()
 			{
 				cout << "space mashing started" << endl;
 				QueryPerformanceCounter(&laltStart);
-				laltStartFrames = (unsigned long long)(floor((unsigned long long)laltStart.QuadPart*targetFPS/(unsigned long long)ticksPerSecond.QuadPart));			// convert to WA frame lengths
-				//keybd_event(VK_SPACE,0,0,0);
+				laltStartFrames = (unsigned long long)floor((unsigned long long)laltStart.LowPart*targetFPS/(unsigned long long)ticksPerSecond.LowPart);			// convert to WA frame lengths
+				keybd_event(VK_SPACE,0,0,0);
+				//cout << "space pressed" << endl;
 			}
 
 			lastLaltHeldFrames = laltHeldFrames;
 			laltHeldFrames = tickFrames - laltStartFrames;
 
-			if (laltHeldLast && laltHeldFrames > lastLaltHeldFrames)
+			if (laltHeldFrames > lastLaltHeldFrames)
 			{
 				keybd_event(VK_SPACE,0,KEYEVENTF_KEYUP,0);
+				//cout << "space released" << endl;
 				keybd_event(VK_SPACE,0,0,0);
+				//cout << "space pressed" << endl;
 			}
 
 			laltHeldLast = true;
 		}
 		else if(laltHeldLast)																// clean up if user released left alt
 		{
-			if(kbState[VK_SPACE]<0) keybd_event(VK_SPACE,0,KEYEVENTF_KEYUP,0);
+			if(kbState[VK_SPACE]<0)
+			{
+				keybd_event(VK_SPACE,0,KEYEVENTF_KEYUP,0);
+				//cout << "space released (during clean-up)" << endl;
+			}
 			cout << "space mashing ended" << endl;
-			laltHeldLast = false;
 			laltHeldFrames = 0;
+			laltHeldLast = false;
 		}
 
 		/////////////// numpad 4 - skip-walk left ///////////////
@@ -163,12 +181,12 @@ int main()
 				cout << "4 pressed" << endl;
 				QueryPerformanceCounter(&leftStart);
 				// VP 2007.02.27: reusing variables is BAD!
-				leftStartFrames = (unsigned long long)(floor((unsigned long long)leftStart.QuadPart*targetFPS/(unsigned long long)ticksPerSecond.QuadPart));			// convert to WA frame lengths
+				leftStartFrames = (unsigned long long)floor((unsigned long long)leftStart.LowPart*targetFPS/(unsigned long long)ticksPerSecond.LowPart);			// convert to WA frame lengths
 				keybd_event(VK_LEFT,0,0,0);
 				cout << "left pressed" << endl;
 			}
 			// VP 2007.02.27: this addition caused leftHeldFrames to grow with steady progression - it should be an assignment instead
-			leftHeldFrames = tickFrames - leftStartFrames;									// get however much time was spent looping, converted into WA frame lengths (0.02 seconds each)
+			leftHeldFrames = tickFrames - leftStartFrames;									// get however much time was spent looping, converted into target frame lengths (0.02 seconds each for WA)
 			bool targetLeftState = (leftHeldFrames % 11 != 10);								// at the 9th frame, let go of left for a frame
 			if(leftDown != targetLeftState)													// VP 2007.02.27: synchronize desired state with actual state
 			{
@@ -199,7 +217,7 @@ int main()
 				cout << "6 pressed" << endl;
 				QueryPerformanceCounter(&rightStart);
 				// VP 2007.02.27: reusing variables is BAD!
-				rightStartFrames = (unsigned long long)(floor((unsigned long long)rightStart.QuadPart*targetFPS/(unsigned long long)ticksPerSecond.QuadPart));			// convert to WA frame lengths
+				rightStartFrames = (unsigned long long)floor((unsigned long long)rightStart.LowPart*targetFPS/(unsigned long long)ticksPerSecond.LowPart);			// convert to WA frame lengths
 				keybd_event(VK_RIGHT,0,0,0);
 				cout << "right pressed" << endl;
 			}
@@ -234,7 +252,7 @@ int main()
 			{
 				cout << "5 pressed" << endl;
 				QueryPerformanceCounter(&alternateStart);
-				alternateStartFrames = (unsigned long long)(floor((unsigned long long)alternateStart.QuadPart*targetFPS/(unsigned long long)ticksPerSecond.QuadPart));	// convert to WA frame lengths
+				alternateStartFrames = (unsigned long long)floor((unsigned long long)alternateStart.LowPart*targetFPS/(unsigned long long)ticksPerSecond.LowPart);	// convert to WA frame lengths
 				keybd_event(VK_LEFT,0,0,0);
 				cout << "left pressed" << endl;
 			}
@@ -244,7 +262,7 @@ int main()
 			
 			if(alternateHeldFrames > lastAlternateHeldFrames)								// only if a frame has passed
 			{
-				bool goingRight = (alternateHeldFrames % 2 == 1);								// every other frame
+				bool goingRight = alternateHeldFrames & 1;								// every other frame
 				if(goingRight)
 				{
 					keybd_event(VK_LEFT, 0, KEYEVENTF_KEYUP, 0);

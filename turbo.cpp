@@ -47,6 +47,7 @@ int main()
 	LARGE_INTEGER alternateTick;    // for comparison between timer query points
 	unsigned __int64 alternateTickFrames;        // alternateTick in WA frame lengths
 	unsigned __int64 alternateHeldFrames;        // length of time the arrow-key-alternating function key was held for
+	unsigned __int64 lastAlternateHeldFrames;			//number of frames the arrow-key-alternating function key was held as of the previous loop
 
 	if(!QueryPerformanceFrequency(&ticksPerSecond))								// QueryPerformanceFrequency() execution and error check
 	{
@@ -81,21 +82,21 @@ int main()
 
 	do
 	{
-		std::this_thread::sleep_for(std::chrono::microseconds(1000));
-		//Sleep(1);																	// wait time between input-checking loops (in milliseconds)
+		//Sleep(1);																			// wait time between input-checking loops (in milliseconds)
+		std::this_thread::sleep_for(std::chrono::microseconds(1000));						// same as above, but allowing microsecond precision
 		QueryPerformanceFrequency(&recheckedFrequency);
 		if(ticksPerSecond.QuadPart != recheckedFrequency.QuadPart)
 		{
 			cout << "QueryPerformanceFrequency returned a different frequency." << endl;
 			ticksPerSecond = recheckedFrequency;
 		}
-		QueryPerformanceCounter(&tick);                                             // generic tick
-		tickFrames = tick.QuadPart*50/ticksPerSecond.QuadPart;                      // convert to WA frames
+		QueryPerformanceCounter(&tick);														// generic tick
+		tickFrames = tick.QuadPart*50/ticksPerSecond.QuadPart;								// convert to WA frames
 
 		kbLayout = GetKeyboardLayout(0);
 
-		GetKeyState(0);                                                             // hackish GetKeyboardState() bug workaround.  thanks, CyberShadow!
-		if(!GetKeyboardState((byte*)kbState))                                       // GetKeyboardState() execution and error check
+		GetKeyState(0);																		// hackish GetKeyboardState() bug workaround.  thanks, CyberShadow!
+		if(!GetKeyboardState((byte*)kbState))												// GetKeyboardState() execution and error check
 		{
 			cout << "Error getting keyboard state.  GetKeyboardState() returned false." << endl
 				 << "Quitting." << endl;
@@ -125,10 +126,9 @@ int main()
 			if (!laltHeldLast)
 			{
 				cout << "space mashing started" << endl;
-				laltHeldFrames = 0;
 				QueryPerformanceCounter(&laltStart);
-				laltStartFrames = laltStart.QuadPart*50/ticksPerSecond.QuadPart;    // convert to WA frame lengths
-				keybd_event(VK_SPACE,0,0,0);
+				laltStartFrames = laltStart.QuadPart*50/ticksPerSecond.QuadPart;			// convert to WA frame lengths
+				//keybd_event(VK_SPACE,0,0,0);
 			}
 
 			lastLaltHeldFrames = laltHeldFrames;
@@ -142,11 +142,12 @@ int main()
 
 			laltHeldLast = true;
 		}
-		else if(laltHeldLast)                                                       // clean up if user released left alt
+		else if(laltHeldLast)																// clean up if user released left alt
 		{
 			if(kbState[VK_SPACE]<0) keybd_event(VK_SPACE,0,KEYEVENTF_KEYUP,0);
 			cout << "space mashing ended" << endl;
 			laltHeldLast = false;
+			laltHeldFrames = 0;
 		}
 
 		/////////////// numpad 4 - skip-walk left ///////////////
@@ -156,17 +157,16 @@ int main()
 			if(!leftHeldLast)
 			{
 				cout << "4 pressed" << endl;
-				leftHeldFrames = 0;
 				QueryPerformanceCounter(&leftStart);
 				// VP 2007.02.27: reusing variables is BAD!
-				leftStartFrames = leftStart.QuadPart*50/ticksPerSecond.QuadPart;    // convert to WA frame lengths
+				leftStartFrames = leftStart.QuadPart*50/ticksPerSecond.QuadPart;			// convert to WA frame lengths
 				keybd_event(VK_LEFT,0,0,0);
 				cout << "left pressed" << endl;
 			}
 			// VP 2007.02.27: this addition caused leftHeldFrames to grow with steady progression - it should be an assignment instead
-			leftHeldFrames = tickFrames - leftStartFrames;                      // get however much time was spent looping, converted into WA frame lengths (0.02 seconds each)
-			bool targetLeftState = (leftHeldFrames % 11 != 10);                      // at the 9th frame, let go of left for a frame
-			if(leftDown != targetLeftState)     // VP 2007.02.27: synchronize desired state with actual state
+			leftHeldFrames = tickFrames - leftStartFrames;									// get however much time was spent looping, converted into WA frame lengths (0.02 seconds each)
+			bool targetLeftState = (leftHeldFrames % 11 != 10);								// at the 9th frame, let go of left for a frame
+			if(leftDown != targetLeftState)													// VP 2007.02.27: synchronize desired state with actual state
 			{
 				keybd_event(VK_LEFT, 0, targetLeftState ? 0 : KEYEVENTF_KEYUP, 0);
 				cout << "left " << (targetLeftState ? "pressed" : "released") << endl;
@@ -174,7 +174,7 @@ int main()
 			}
 			leftHeldLast = true;
 		}
-		else if(leftHeldLast)                                                       // clean up if user released numpad 4
+		else if(leftHeldLast)																// clean up if user released numpad 4
 		{
 			cout << "4 released" << endl;
 			if(kbState[VK_LEFT]<0)
@@ -183,6 +183,7 @@ int main()
 				cout << "left released (during clean-up)" << endl;
 			}
 			leftHeldLast = false;
+			leftHeldFrames = 0;
 		}
 
 		/////////////// numpad 6 - skip-walk right ///////////////
@@ -192,17 +193,16 @@ int main()
 			if(!rightHeldLast)
 			{
 				cout << "6 pressed" << endl;
-				rightHeldFrames = 0;
 				QueryPerformanceCounter(&rightStart);
 				// VP 2007.02.27: reusing variables is BAD!
-				rightStartFrames = rightStart.QuadPart*50/ticksPerSecond.QuadPart;    // convert to WA frame lengths
+				rightStartFrames = rightStart.QuadPart*50/ticksPerSecond.QuadPart;			// convert to WA frame lengths
 				keybd_event(VK_RIGHT,0,0,0);
 				cout << "right pressed" << endl;
 			}
 			// VP 2007.02.27: this addition caused rightHeldFrames to grow with steady progression - it should be an assignment instead
-			rightHeldFrames = tickFrames - rightStartFrames;                      // get however much time was spent looping, converted into WA frame lengths (0.02 seconds each)
-			bool targetRightState = (rightHeldFrames % 11 != 10);                      // at the 9th frame, let go of left for a frame
-			if(rightDown != targetRightState)     // VP 2007.02.27: synchronize desired state with actual state
+			rightHeldFrames = tickFrames - rightStartFrames;								// get however much time was spent looping, converted into WA frame lengths (0.02 seconds each)
+			bool targetRightState = (rightHeldFrames % 11 != 10);							// at the 9th frame, let go of left for a frame
+			if(rightDown != targetRightState)												// VP 2007.02.27: synchronize desired state with actual state
 			{
 				keybd_event(VK_RIGHT, 0, targetRightState ? 0 : KEYEVENTF_KEYUP, 0);
 				cout << "right " << (targetRightState ? "pressed" : "released") << endl;
@@ -210,7 +210,7 @@ int main()
 			}
 			rightHeldLast = true;
 		}
-		else if(rightHeldLast)                                                       // clean up if user released numpad 4
+		else if(rightHeldLast)																// clean up if user released numpad 6
 		{
 			cout << "6 released" << endl;
 			if(kbState[VK_RIGHT]<0)
@@ -219,6 +219,7 @@ int main()
 				cout << "right released (during clean-up)" << endl;
 			}
 			rightHeldLast = false;
+			rightHeldFrames = 0;
 		}
 
 		/////////////// numpad 5 - alternate left and right arrow keys ///////////////
@@ -229,22 +230,30 @@ int main()
 			{
 				cout << "5 pressed" << endl;
 				QueryPerformanceCounter(&alternateStart);
-				alternateStartFrames = alternateStart.QuadPart*50/ticksPerSecond.QuadPart;    // convert to WA frame lengths
-				keybd_event(VK_LEFT,0,0,0);
-				cout << "left pressed" << endl;
+				alternateStartFrames = alternateStart.QuadPart*50/ticksPerSecond.QuadPart;	// convert to WA frame lengths
 			}
-			alternateHeldFrames = tickFrames - alternateStartFrames;                      // get however much time was spent looping, converted into WA frame lengths (0.02 seconds each)
-			bool targetAlternateState = (alternateHeldFrames % 2 != 1);                      // every other frame
-			if(alternateDown != targetAlternateState)     // VP 2007.02.27: synchronize desired state with actual state
+
+			lastAlternateHeldFrames = alternateHeldFrames;
+			alternateHeldFrames = tickFrames - alternateStartFrames;						// get however much time was spent looping, converted into WA frame lengths (0.02 seconds each)
+			
+			bool goingLeft = (alternateHeldFrames % 2 == 1);								// every other frame
+			if(alternateHeldFrames > lastAlternateHeldFrames)								// only if a frame has passed
 			{
-				keybd_event(VK_RIGHT, 0, targetAlternateState ? 0 : KEYEVENTF_KEYUP, 0);
-				cout << (targetAlternateState ? "left pressed" : "right pressed") << endl;
-				alternateDown = targetAlternateState;
+				if(goingLeft)
+				{
+					keybd_event(VK_LEFT, 0, KEYEVENTF_KEYUP, 0);
+					keybd_event(VK_RIGHT, 0, 0, 0);
+				}
+				else
+				{
+					keybd_event(VK_RIGHT, 0, KEYEVENTF_KEYUP, 0);
+					keybd_event(VK_LEFT, 0, 0, 0);
+				}
+				cout << (goingLeft ? "left pressed" : "right pressed") << endl;
 			}
-			else keybd_event(VK_LEFT, 0, targetAlternateState ? KEYEVENTF_KEYUP : 0, 0);
 			alternateHeldLast = true;
 		}
-		else if(alternateHeldLast)                                                       // clean up if user released numpad 4
+		else if(alternateHeldLast)															// clean up if user released numpad 5
 		{
 			cout << "5 released" << endl;
 			if(kbState[VK_LEFT]<0)
@@ -258,11 +267,12 @@ int main()
 				cout << "right released (during clean-up)" << endl;
 			}
 			alternateHeldLast = false;
+			alternateHeldFrames = 0;
 		}
 
 		/////////////// ctrl+break - quit ///////////////
 
-	} while(kbState[VK_CANCEL]>=0);                                                 // check ctrl+break and quit if it's held; otherwise, loop again
+	} while(kbState[VK_CANCEL]>=0);															// check ctrl+break and quit if it's held; otherwise, loop again
 	
 	// clean-up
 

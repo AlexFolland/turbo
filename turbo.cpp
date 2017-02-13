@@ -83,7 +83,7 @@ int main()
 	do
 	{
 		//Sleep(1);																			// wait time between input-checking loops (in milliseconds)
-		std::this_thread::sleep_for(std::chrono::microseconds(1000));						// same as above, but allowing microsecond precision
+		this_thread::sleep_for(chrono::microseconds(1000));						// same as above, but allowing microsecond precision
 		QueryPerformanceFrequency(&recheckedFrequency);
 		if(ticksPerSecond.QuadPart != recheckedFrequency.QuadPart)
 		{

@@ -10,7 +10,7 @@ int main()
 	// declarations and definitions
 
 	unsigned int targetFPS = 50;												// target frames per second
-	unsigned int targetGranularity = 5;											// target number of times to poll per frame at target frame rate
+	unsigned int targetGranularity = 10;											// target number of times to poll per frame at target frame rate
 	LARGE_INTEGER ticksPerSecond;												// timer frequency, defined by QueryPerformanceFrequency()
 	LARGE_INTEGER recheckedFrequency;											// timer frequency, checked again each loop
 	LARGE_INTEGER tick;															// tick to get on every loop for timing
@@ -61,7 +61,8 @@ int main()
 	LARGE_INTEGER alternateTick;												// for comparison between timer query points
 	unsigned long long alternateTickFrames;										// alternateTick in target frame lengths
 	unsigned long long alternateHeldFrames;										// length of time the arrow-key-alternating function key was held for
-	unsigned long long lastAlternateHeldFrames;									//number of frames the arrow-key-alternating function key was held as of the previous loop
+	unsigned long long lastAlternateHeldFrames;									// number of frames the arrow-key-alternating function key was held as of the previous loop
+	bool goingRight = false;													// whether currently going right
 
 	if(!QueryPerformanceFrequency(&ticksPerSecond))								// QueryPerformanceFrequency() execution and error check
 	{
@@ -258,8 +259,9 @@ int main()
 				cout << "5 pressed" << endl;
 				QueryPerformanceCounter(&alternateStart);
 				alternateStartFrames = (unsigned long long)floor((unsigned long long)alternateStart.LowPart*targetFPS/(unsigned long long)ticksPerSecond.LowPart);	// convert to WA frame lengths
-				keybd_event(VK_LEFT,0,0,0);
-				cout << "left pressed" << endl;
+				keybd_event(goingRight ? VK_LEFT : VK_RIGHT,0,0,0);
+				cout << (goingRight ? "left" : "right") << " pressed" << endl;
+				goingRight = !goingRight;
 			}
 
 			lastAlternateHeldFrames = alternateHeldFrames;
@@ -267,7 +269,7 @@ int main()
 			
 			if(alternateHeldFrames > lastAlternateHeldFrames)								// only if a frame has passed
 			{
-				bool goingRight = alternateHeldFrames & 1;								// every other frame
+				goingRight = !goingRight;								// every other frame
 				if(goingRight)
 				{
 					keybd_event(VK_LEFT, 0, KEYEVENTF_KEYUP, 0);
@@ -284,25 +286,30 @@ int main()
 		}
 		else if(alternateHeldLast)															// clean up if user released numpad 5
 		{
-			cout << "5 released" << endl;
-			if(kbState[VK_LEFT]<0)
+			lastAlternateHeldFrames = alternateHeldFrames;
+			alternateHeldFrames = tickFrames - alternateStartFrames;	
+			if(alternateHeldFrames > lastAlternateHeldFrames);								// keep checking whether a frame is done before cleaning up
 			{
-				keybd_event(VK_LEFT,0,KEYEVENTF_KEYUP,0);
-				cout << "left released (during clean-up)" << endl;
+				cout << "5 released" << endl;
+				if(kbState[VK_LEFT]<0)
+				{
+					keybd_event(VK_LEFT,0,KEYEVENTF_KEYUP,0);
+					cout << "left released (during clean-up)" << endl;
+				}
+				if(kbState[VK_RIGHT]<0)
+				{
+					keybd_event(VK_RIGHT,0,KEYEVENTF_KEYUP,0);
+					cout << "right released (during clean-up)" << endl;
+				}
+				alternateHeldLast = false;
+				alternateHeldFrames = 0;
 			}
-			if(kbState[VK_RIGHT]<0)
-			{
-				keybd_event(VK_RIGHT,0,KEYEVENTF_KEYUP,0);
-				cout << "right released (during clean-up)" << endl;
-			}
-			alternateHeldLast = false;
-			alternateHeldFrames = 0;
 		}
 
 		/////////////// ctrl+break - quit ///////////////
 
 	} while(kbState[VK_CANCEL]>=0);															// check ctrl+break and quit if it's held; otherwise, loop again
-	
+
 	// clean-up
 
 	cout << "quitting..." << endl;

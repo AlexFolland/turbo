@@ -9,8 +9,8 @@ int main()
 {
 	// declarations and definitions
 
-	unsigned long long targetFPS = 50LL;										// target frames per second
-	unsigned long long targetGranularity = 3LL;									// target number of times to poll per frame at target frame rate
+	unsigned int targetFPS = 50;												// target frames per second
+	unsigned int targetGranularity = 5;											// target number of times to poll per frame at target frame rate
 	LARGE_INTEGER ticksPerSecond;												// timer frequency, defined by QueryPerformanceFrequency()
 	LARGE_INTEGER recheckedFrequency;											// timer frequency, checked again each loop
 	LARGE_INTEGER tick;															// tick to get on every loop for timing
@@ -19,47 +19,47 @@ int main()
 	char kbState[256];															// array for GetKeyboardState() to dump into
 	HKL kbLayout;																// keyboard layout for GetKeyboardLayout()
 	/*
-	INPUT inputToSend;													// input to send using SendInput()
+	INPUT inputToSend;															// input to send using SendInput()
 	inputToSend.type = (DWORD)1;												// 0 == INPUT_MOUSE; 1 == INPUT_KEYBOARD; 2 == INPUT_HARDWARE
 	inputToSend
-	KEYBDINPUT keyboardInputToSend;										// keyboard input to be sent as part of the INPUT struct
-	input.ki.wVk = (WORD)0;											// virtual key code to send
-	input.ki.wScan = (WORD)0;										// hardware scan code to send
-	input.ki.dwFlags = (DWORD)0;										// add KEVENTF_KEYUP for keyup; 0 for keydown; add KEYEVENTF_SCANCODE if it's a scancode instead of virtual-key code
-	input.ki.time = (DWORD)0;										// timestamp for the event, in milliseconds		
-	input.ki.dwExtraInfo = (ULONG_PTR)0;								// some additional crap; idk
+	KEYBDINPUT keyboardInputToSend;												// keyboard input to be sent as part of the INPUT struct
+	input.ki.wVk = (WORD)0;														// virtual key code to send
+	input.ki.wScan = (WORD)0;													// hardware scan code to send
+	input.ki.dwFlags = (DWORD)0;												// add KEVENTF_KEYUP for keyup; 0 for keydown; add KEYEVENTF_SCANCODE if it's a scancode instead of virtual-key code
+	input.ki.time = (DWORD)0;													// timestamp for the event, in milliseconds		
+	input.ki.dwExtraInfo = (ULONG_PTR)0;										// some additional crap; idk
 	*/
 
 	bool laltHeldLast = false;													// whether the space-mashing function key was held in the last loop
 	LARGE_INTEGER laltStart;													// point at which the space-mashing function key began being held
-	unsigned long long laltStartFrames = 0;										// laltStart in WA frame lengths
+	unsigned long long laltStartFrames = 0;										// laltStart in target frame lengths
 	LARGE_INTEGER laltTick;														// point at which the space-mashing function key began being held
-	unsigned long long laltTickFrames = 0;										// laltTick in WA frame lengths
+	unsigned long long laltTickFrames = 0;										// laltTick in target frame lengths
 	unsigned long long laltHeldFrames = 0;										// number of frames the space-mashing function key was held so far
 	unsigned long long lastLaltHeldFrames = 0;									// number of frames the space-mashing function key was held as of the previous loop
 
 	bool leftHeldLast = false;													// whether the left skip-walk function key was held in the last loop
 	bool leftDown = false;														// ..
 	LARGE_INTEGER leftStart;													// point at which the left skip-walk function key began being held
-	unsigned long long leftStartFrames;											// leftStart in WA frame lengths
+	unsigned long long leftStartFrames;											// leftStart in target frame lengths
 	LARGE_INTEGER leftTick;														// for comparison between timer query points
-	unsigned long long leftTickFrames;											// leftTick in WA frame lengths
+	unsigned long long leftTickFrames;											// leftTick in target frame lengths
 	unsigned long long leftHeldFrames;											// length of time the left skip-walk function key was held for
 
 	bool rightHeldLast = false;													// whether the right skip-walk function key was held in the last loop
 	bool rightDown = false;														// ..
 	LARGE_INTEGER rightStart;													// point at which the left skip-walk function key began being held
-	unsigned long long rightStartFrames;											// rightStart in WA frame lengths
+	unsigned long long rightStartFrames;										// rightStart in target frame lengths
 	LARGE_INTEGER rightTick;													// for comparison between timer query points
-	unsigned long long rightTickFrames;											// rightTick in WA frame lengths
+	unsigned long long rightTickFrames;											// rightTick in target frame lengths
 	unsigned long long rightHeldFrames;											// length of time the left skip-walk function key was held for
 
 	bool alternateHeldLast = false;												// whether the arrow-key-alternating function key was held in the last loop
 	bool alternateDown = false;													// ..
 	LARGE_INTEGER alternateStart;												// point at which the arrow-key-alternating function key began being held
-	unsigned long long alternateStartFrames;										// alternateStart in WA frame lengths
+	unsigned long long alternateStartFrames;									// alternateStart in target frame lengths
 	LARGE_INTEGER alternateTick;												// for comparison between timer query points
-	unsigned long long alternateTickFrames;										// alternateTick in WA frame lengths
+	unsigned long long alternateTickFrames;										// alternateTick in target frame lengths
 	unsigned long long alternateHeldFrames;										// length of time the arrow-key-alternating function key was held for
 	unsigned long long lastAlternateHeldFrames;									//number of frames the arrow-key-alternating function key was held as of the previous loop
 
@@ -77,13 +77,13 @@ int main()
 		 << " numpad 0      | mash space repeatedly, re-pressing each frame"					<< endl
 		 << "               |"																	<< endl
 		 << "---------------|---------------------------------------------------------------"	<< endl
-		 << " numpad 4      | skip-walk left"													<< endl
+		 << " numpad 4      | skip-walk left (left 9 frames, release 1 frame, repeat)"			<< endl
 		 << " qwerty Z      |"																	<< endl
 		 << "---------------|---------------------------------------------------------------"	<< endl
-		 << " numpad 6      | skip-walk right"													<< endl
+		 << " numpad 6      | skip-walk right (right 9 frames, release 1 frame, repeat)"		<< endl
 		 << " qwerty X      |"																	<< endl
 		 << "---------------|---------------------------------------------------------------"	<< endl
-		 << " numpad 5      | alternate left and right arrow keys"								<< endl
+		 << " numpad 5      | alternate left and right arrow keys each frame"					<< endl
 		 << " qwerty C      |"																	<< endl
 		 << "---------------|---------------------------------------------------------------"	<< endl
 		 << " ctrl+break    | quit"																<< endl
@@ -99,12 +99,15 @@ int main()
 		//Sleep(1);																			// wait time between input-checking loops (in milliseconds)
 		this_thread::sleep_for(chrono::microseconds((unsigned long long)floor(1000000/(targetGranularity*targetFPS))));									// same as above, but allowing microsecond precision
 		
+		/*
 		QueryPerformanceFrequency(&recheckedFrequency);
 		if(ticksPerSecond.LowPart != recheckedFrequency.LowPart)
 		{
 			cout << "QueryPerformanceFrequency returned a different frequency." << endl;
 			ticksPerSecond = recheckedFrequency;
 		}
+		*/
+
 		QueryPerformanceCounter(&tick);														// generic tick
 		tickFrames = (unsigned long long)floor((unsigned long long)tick.LowPart*targetFPS/(unsigned long long)ticksPerSecond.LowPart);								// convert to WA frames
 
@@ -184,6 +187,7 @@ int main()
 				leftStartFrames = (unsigned long long)floor((unsigned long long)leftStart.LowPart*targetFPS/(unsigned long long)ticksPerSecond.LowPart);			// convert to WA frame lengths
 				keybd_event(VK_LEFT,0,0,0);
 				cout << "left pressed" << endl;
+				leftDown = true;
 			}
 			// VP 2007.02.27: this addition caused leftHeldFrames to grow with steady progression - it should be an assignment instead
 			leftHeldFrames = tickFrames - leftStartFrames;									// get however much time was spent looping, converted into target frame lengths (0.02 seconds each for WA)
@@ -220,6 +224,7 @@ int main()
 				rightStartFrames = (unsigned long long)floor((unsigned long long)rightStart.LowPart*targetFPS/(unsigned long long)ticksPerSecond.LowPart);			// convert to WA frame lengths
 				keybd_event(VK_RIGHT,0,0,0);
 				cout << "right pressed" << endl;
+				rightDown = true;
 			}
 			// VP 2007.02.27: this addition caused rightHeldFrames to grow with steady progression - it should be an assignment instead
 			rightHeldFrames = tickFrames - rightStartFrames;								// get however much time was spent looping, converted into WA frame lengths (0.02 seconds each)

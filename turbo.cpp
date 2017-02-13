@@ -25,7 +25,7 @@ int main()
 	LARGE_INTEGER laltTick;														// point at which the space-mashing function key began being held
 	unsigned long long laltTickFrames;											// laltTick in WA frame lengths
 	unsigned long long laltHeldFrames;											// number of frames the space-mashing function key was held so far
-	unsigned long long lastLaltHeldFrames;										//number of frames the space-mashing function key was held as of the previous loop
+	unsigned long long lastLaltHeldFrames;										// number of frames the space-mashing function key was held as of the previous loop
 
 	bool leftHeldLast = false;													// whether the left skip-walk function key was held in the last loop
 	bool leftDown = false;														// ..

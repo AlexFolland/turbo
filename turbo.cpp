@@ -9,7 +9,8 @@ int main()
 {
 	// declarations and definitions
 
-	unsigned long long targetFPS = 50LL;											// target frames per second
+	unsigned long long targetFPS = 50LL;										// target frames per second
+	unsigned long long targetGranularity = 3LL;									// target number of times to poll per frame at target frame rate
 	LARGE_INTEGER ticksPerSecond;												// timer frequency, defined by QueryPerformanceFrequency()
 	LARGE_INTEGER recheckedFrequency;											// timer frequency, checked again each loop
 	LARGE_INTEGER tick;															// tick to get on every loop for timing
@@ -85,7 +86,7 @@ int main()
 	do
 	{
 		//Sleep(1);																			// wait time between input-checking loops (in milliseconds)
-		this_thread::sleep_for(chrono::microseconds((unsigned long long)floor(500000LL/targetFPS)));									// same as above, but allowing microsecond precision
+		this_thread::sleep_for(chrono::microseconds((unsigned long long)floor(1000000LL/(targetGranularity*targetFPS))));									// same as above, but allowing microsecond precision
 		
 		QueryPerformanceFrequency(&recheckedFrequency);
 		if(ticksPerSecond.QuadPart != recheckedFrequency.QuadPart)

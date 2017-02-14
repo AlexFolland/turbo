@@ -7,30 +7,31 @@ using namespace std;
 
 // declarations and definitions
 
-float targetFPS = 50;											// target frames per second
-float targetGranularity = 2;									// target number of times to poll per frame at target frame rate
+float targetFPS = 50;																				// target frames per second
+float targetGranularity = 2;																		// target number of times to poll per frame at target frame rate
 unsigned long long sleepLength = (unsigned long long)(1000000.0f/(targetGranularity*targetFPS));
 
-LARGE_INTEGER ticksPerSecond;												// timer frequency, defined by QueryPerformanceFrequency()
-LARGE_INTEGER tick;															// tick to get on every loop for timing
-float tickFrames;												// the above in target frame lengths
-float lastTickFrames = 0.0f;										// for time comparison with previous loop
+LARGE_INTEGER ticksPerSecond;																		// timer frequency, defined by QueryPerformanceFrequency()
+LARGE_INTEGER tick;																					// tick to get on every loop for timing
+float tickFrames;																					// the above in target frame lengths
+float lastTickFrames = 0.0f;																		// for time comparison with previous loop
 
-bool mashHeldLast = false;													// whether the space-mashing function key was held in the last loop
+bool mashHeldLast = false;																			// whether the space-mashing function key was held in the last loop
 
-bool leftHeldLast = false;													// whether the left skip-walk function key was held in the last loop
-float leftStartFrames;											// leftStart in target frame lengths
-float leftTickFrames;											// leftTick in target frame lengths
-float leftHeldFrames;											// length of time the left skip-walk function key was held for
+bool leftHeldLast = false;																			// whether the left skip-walk function key was held in the last loop
+float leftStartFrames;																				// leftStart in target frame lengths
+float leftTickFrames;																				// leftTick in target frame lengths
+float leftHeldFrames;																				// length of time the left skip-walk function key was held for
+bool targetLeftState;
 
-bool rightHeldLast = false;													// whether the right skip-walk function key was held in the last loop
-float rightStartFrames;										// rightStart in target frame lengths
-float rightTickFrames;											// rightTick in target frame lengths
-float rightHeldFrames;											// length of time the left skip-walk function key was held for
+bool rightHeldLast = false;																			// whether the right skip-walk function key was held in the last loop
+float rightStartFrames;																				// rightStart in target frame lengths
+float rightTickFrames;																				// rightTick in target frame lengths
+float rightHeldFrames;																				// length of time the left skip-walk function key was held for
+bool targetRightState;
 
-bool alternateHeldLast = false;												// whether the arrow-key-alternating function key was held in the last loop
-float alternateStartFrames;									// alternateStart in target frame lengths
-bool goingRight = false;													// whether currently going right
+bool alternateHeldLast = false;																		// whether the arrow-key-alternating function key was held in the last loop
+bool goingRight = false;																			// whether currently going right
 
 HKL kbLayout = GetKeyboardLayout(0);
 
@@ -71,7 +72,7 @@ int main()
 	}
 
 	// float sleepLengthFrames = (float)sleepLength/1000000.0f*targetFPS/(float)ticksPerSecond.LowPart;
-	float halfSleepLengthFramesPlusOne = (((float)sleepLength/1000000.0f*targetFPS/(float)ticksPerSecond.LowPart)/2.0f)+1.0f;
+	float oneMinusHalfSleepLengthFrames = 1.0f-(((float)sleepLength/1000000.0f*targetFPS/(float)ticksPerSecond.LowPart)/2.0f);
 
 	// user instructions
 
@@ -106,8 +107,8 @@ int main()
 		tickFrames = (float)tick.LowPart*targetFPS/(float)ticksPerSecond.LowPart;				// convert to number of frames at target frame rate
 
 		// this line is the gateway, preventing the loop from entering the input checks unless an entire frame at the target frame rate has passed
-		if (!(tickFrames >= floor(lastTickFrames) + halfSleepLengthFramesPlusOne)) continue;	// hardcore synchronization or TheDailyWTF canditate?  you decide!
-	
+		if (!(tickFrames >= floor(lastTickFrames) + oneMinusHalfSleepLengthFrames)) continue;
+
 		// begin input checks
 		
 		/////////////// left alt - mash space ///////////////
@@ -160,7 +161,7 @@ int main()
 			}
 
 			leftHeldFrames = tickFrames - leftStartFrames;									// get however many frames this functionality's bind has been held
-			bool targetLeftState = ((long)leftHeldFrames % 11 != 10);								// at the 9th frame, let go of left for a frame
+			targetLeftState = ((long)leftHeldFrames % 11 != 10);								// at the 9th frame, let go of left for a frame
 			if(KeyIsPressed(VK_LEFT) != targetLeftState)									// VP 2007.02.27: synchronize desired state with actual state
 			{
 				SendKeyboardInput(VK_LEFT, !targetLeftState);
@@ -193,7 +194,7 @@ int main()
 			}
 
 			rightHeldFrames = tickFrames - rightStartFrames;								// get however many frames this functionality's bind has been held
-			bool targetRightState = ((long)rightHeldFrames % 11 != 10);							// at the 9th frame, let go of left for a frame
+			targetRightState = ((long)rightHeldFrames % 11 != 10);							// at the 9th frame, let go of left for a frame
 			if(KeyIsPressed(VK_RIGHT) != targetRightState)									// VP 2007.02.27: synchronize desired state with actual state
 			{
 				SendKeyboardInput(VK_RIGHT, !targetRightState);

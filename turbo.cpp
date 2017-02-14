@@ -7,27 +7,27 @@ using namespace std;
 
 // declarations and definitions
 
-float targetFPS = 50;																				// target frames per second
-float targetGranularity = 2;																		// target number of times to poll per frame at target frame rate
-unsigned long long sleepLength = (unsigned long long)(1000000.0f/(targetGranularity*targetFPS));
+double targetFPS = 50;																				// target frames per second
+double targetGranularity = 2;																		// target number of times to poll per frame at target frame rate
+unsigned long long sleepLength = (unsigned long long)(1000000.0/(targetGranularity*targetFPS));
 
 LARGE_INTEGER ticksPerSecond;																		// timer frequency, defined by QueryPerformanceFrequency()
+LARGE_INTEGER firstTick;																			// tick to get before looping for synchronization
+double firstTickFrames;																				// the above in target frame lengths
 LARGE_INTEGER tick;																					// tick to get on every loop for timing
-float tickFrames;																					// the above in target frame lengths
-float lastTickFrames = 0.0f;																		// for time comparison with previous loop
+double tickFrames;																					// the above in target frame lengths
+double nextEntryTime = 0.0;																			// for time comparison with previous loop
 
 bool mashHeldLast = false;																			// whether the space-mashing function key was held in the last loop
 
 bool leftHeldLast = false;																			// whether the left skip-walk function key was held in the last loop
-float leftStartFrames;																				// leftStart in target frame lengths
-float leftTickFrames;																				// leftTick in target frame lengths
-float leftHeldFrames;																				// length of time the left skip-walk function key was held for
+double leftStartFrames;																				// leftStart in target frame lengths
+unsigned long long leftHeldFrames;																	// length of time the left skip-walk function key was held for
 bool targetLeftState;
 
 bool rightHeldLast = false;																			// whether the right skip-walk function key was held in the last loop
-float rightStartFrames;																				// rightStart in target frame lengths
-float rightTickFrames;																				// rightTick in target frame lengths
-float rightHeldFrames;																				// length of time the left skip-walk function key was held for
+double rightStartFrames;																				// rightStart in target frame lengths
+unsigned long long rightHeldFrames;																	// length of time the left skip-walk function key was held for
 bool targetRightState;
 
 bool alternateHeldLast = false;																		// whether the arrow-key-alternating function key was held in the last loop
@@ -71,9 +71,6 @@ int main()
 		return 1;
 	}
 
-	// float sleepLengthFrames = (float)sleepLength/1000000.0f*targetFPS/(float)ticksPerSecond.LowPart;
-	float oneMinusHalfSleepLengthFrames = 1.0f-(((float)sleepLength/1000000.0f*targetFPS/(float)ticksPerSecond.LowPart)/2.0f);
-
 	// user instructions
 
 	cout << " input         | effect"															<< endl
@@ -96,6 +93,10 @@ int main()
 		 << "debug output"																		<< endl
 		 << "------------"																		<< endl;
 
+	QueryPerformanceCounter(&firstTick);														// time since system start in CPU cycles, grabbed here for synchronization
+	firstTickFrames = (double)firstTick.LowPart*targetFPS/(double)ticksPerSecond.LowPart;			// convert to number of frames at target frame rate
+	nextEntryTime = firstTickFrames;
+
 	// main loop
 
 	do
@@ -103,11 +104,12 @@ int main()
 		this_thread::sleep_for(chrono::microseconds(sleepLength));								// sleep between checks (number of times per frame dictated by fps and granularity)
 
 		QueryPerformanceCounter(&tick);															// time since system start in CPU cycles
-		lastTickFrames = tickFrames;															// tick at last loop, used for checking whether to do input checks
-		tickFrames = (float)tick.LowPart*targetFPS/(float)ticksPerSecond.LowPart;				// convert to number of frames at target frame rate
+		tickFrames = (double)tick.LowPart*targetFPS/(double)ticksPerSecond.LowPart;				// convert to number of frames at target frame rate
 
 		// this line is the gateway, preventing the loop from entering the input checks unless an entire frame at the target frame rate has passed
-		if (!(tickFrames >= floor(lastTickFrames) + oneMinusHalfSleepLengthFrames)) continue;
+		if (!(tickFrames > nextEntryTime)) continue;
+
+		nextEntryTime = nextEntryTime + 1.0;													// wait 1 frame before next input checks
 
 		// begin input checks
 		
@@ -160,8 +162,8 @@ int main()
 				//cout << "left pressed" << endl;
 			}
 
-			leftHeldFrames = tickFrames - leftStartFrames;									// get however many frames this functionality's bind has been held
-			targetLeftState = ((long)leftHeldFrames % 11 != 10);								// at the 9th frame, let go of left for a frame
+			leftHeldFrames = (unsigned long long)(tickFrames - leftStartFrames);			// get however many frames this functionality's bind has been held
+			targetLeftState = (leftHeldFrames % 11 != 10);				// at the 9th frame, let go of left for a frame
 			if(KeyIsPressed(VK_LEFT) != targetLeftState)									// VP 2007.02.27: synchronize desired state with actual state
 			{
 				SendKeyboardInput(VK_LEFT, !targetLeftState);
@@ -193,8 +195,8 @@ int main()
 				//cout << "right pressed" << endl;
 			}
 
-			rightHeldFrames = tickFrames - rightStartFrames;								// get however many frames this functionality's bind has been held
-			targetRightState = ((long)rightHeldFrames % 11 != 10);							// at the 9th frame, let go of left for a frame
+			rightHeldFrames = (unsigned long long)(tickFrames - rightStartFrames);								// get however many frames this functionality's bind has been held
+			targetRightState = (rightHeldFrames % 11 != 10);							// at the 9th frame, let go of left for a frame
 			if(KeyIsPressed(VK_RIGHT) != targetRightState)									// VP 2007.02.27: synchronize desired state with actual state
 			{
 				SendKeyboardInput(VK_RIGHT, !targetRightState);

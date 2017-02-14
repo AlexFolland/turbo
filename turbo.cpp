@@ -8,7 +8,7 @@ using namespace std;
 // declarations and definitions
 
 float targetFPS = 50;											// target frames per second
-float targetGranularity = 10;									// target number of times to poll per frame at target frame rate
+float targetGranularity = 2;									// target number of times to poll per frame at target frame rate
 unsigned long long sleepLength = (unsigned long long)(1000000.0f/(targetGranularity*targetFPS));
 
 LARGE_INTEGER ticksPerSecond;												// timer frequency, defined by QueryPerformanceFrequency()
@@ -16,11 +16,7 @@ LARGE_INTEGER tick;															// tick to get on every loop for timing
 float tickFrames;												// the above in target frame lengths
 float lastTickFrames = 0.0f;										// for time comparison with previous loop
 
-bool laltHeldLast = false;													// whether the space-mashing function key was held in the last loop
-float laltStartFrames = 0.0f;										// laltStart in target frame lengths
-float laltTickFrames = 0.0f;										// laltTick in target frame lengths
-float laltHeldFrames = 0.0f;										// number of frames the space-mashing function key was held so far
-float lastLaltHeldFrames = 0.0f;									// number of frames the space-mashing function key was held as of the previous loop
+bool mashHeldLast = false;													// whether the space-mashing function key was held in the last loop
 
 bool leftHeldLast = false;													// whether the left skip-walk function key was held in the last loop
 float leftStartFrames;											// leftStart in target frame lengths
@@ -75,6 +71,7 @@ int main()
 	}
 
 	float sleepLengthFrames = (float)sleepLength/1000000.0f*targetFPS/(float)ticksPerSecond.LowPart;
+	float halfSleepLengthFramesPlusOne = (((float)sleepLength/1000000.0f*targetFPS/(float)ticksPerSecond.LowPart)/2.0f)+1.0f;
 
 	// user instructions
 
@@ -109,7 +106,7 @@ int main()
 		tickFrames = (float)tick.LowPart*targetFPS/(float)ticksPerSecond.LowPart;				// convert to number of frames at target frame rate
 
 		// this line is the gateway, preventing the loop from entering the input checks unless an entire frame at the target frame rate has passed
-		if (!(tickFrames >= floor(lastTickFrames) + (1.0f + (sleepLengthFrames/2)))) continue;	// hardcore synchronization or TheDailyWTF canditate?  you decide!
+		if (!(tickFrames >= floor(lastTickFrames) + halfSleepLengthFramesPlusOne)) continue;	// hardcore synchronization or TheDailyWTF canditate?  you decide!
 	
 		// begin input checks
 		
@@ -125,28 +122,21 @@ int main()
 
 		if(KeyIsPressed(VK_MENU) || KeyIsPressed(VK_NUMPAD0))
 		{
-			if (!laltHeldLast)
+			if (!mashHeldLast)
 			{
 				cout << "space mashing started" << endl;
-				laltStartFrames = tickFrames;												// set start timestamp
 				SendKeyboardInput(VK_SPACE);
 				//cout << "space pressed" << endl;
 			}
 
-			lastLaltHeldFrames = laltHeldFrames;
-			laltHeldFrames = tickFrames - laltStartFrames;
+			SendKeyboardInput(VK_SPACE,true);
+			//cout << "space released" << endl;
+			SendKeyboardInput(VK_SPACE);
+			//cout << "space pressed" << endl;
 
-			if (laltHeldFrames > lastLaltHeldFrames)
-			{
-				SendKeyboardInput(VK_SPACE,true);
-				//cout << "space released" << endl;
-				SendKeyboardInput(VK_SPACE);
-				//cout << "space pressed" << endl;
-			}
-
-			laltHeldLast = true;
+			mashHeldLast = true;
 		}
-		else if(laltHeldLast)																// clean up if user released left alt
+		else if(mashHeldLast)																// clean up if user released the space-mashing key
 		{
 			if(KeyIsPressed(VK_SPACE))
 			{
@@ -154,8 +144,7 @@ int main()
 				//cout << "space released (during clean-up)" << endl;
 			}
 			cout << "space mashing ended" << endl;
-			laltHeldFrames = 0;
-			laltHeldLast = false;
+			mashHeldLast = false;
 		}
 
 		/////////////// numpad 4 - skip-walk left ///////////////

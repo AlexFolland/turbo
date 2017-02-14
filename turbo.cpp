@@ -8,7 +8,7 @@ using namespace std;
 // declarations and definitions
 
 double targetFPS = 50.0;																			// target frames per second; set to target application's input polling rate
-double targetGranularity = 2.0;																		// target number of times to poll per frame at target frame rate
+double targetGranularity = 4.0;																		// target number of times to poll per frame at target frame rate
 double sleepLength = (1000000.0/(targetGranularity*targetFPS));										// rough time between timing loops
 
 LARGE_INTEGER ticksPerSecond;																		// timer frequency, defined by QueryPerformanceFrequency()
@@ -26,8 +26,8 @@ unsigned long long leftHeldFrames;																	// length of time the left sk
 bool targetLeftState;
 
 bool rightHeldLast = false;																			// whether the right skip-walk function key was held in the last loop
-double rightStartFrames;																				// rightStart in target frame lengths
-unsigned long long rightHeldFrames;																	// length of time the left skip-walk function key was held for
+double rightStartFrames;																			// rightStart in target frame lengths
+unsigned long long rightHeldFrames;																	// length of time the right skip-walk function key was held for
 bool targetRightState;
 
 bool alternateHeldLast = false;																		// whether the arrow-key-alternating function key was held in the last loop
@@ -94,7 +94,7 @@ int main()
 		 << "------------"																		<< endl;
 
 	QueryPerformanceCounter(&firstTick);														// time since system start in CPU cycles, grabbed here for synchronization
-	firstTickFrames = (double)firstTick.LowPart*targetFPS/(double)ticksPerSecond.LowPart;		// convert to number of frames at target frame rate
+	firstTickFrames = (double)firstTick.QuadPart*targetFPS/(double)ticksPerSecond.QuadPart;		// convert to number of frames at target frame rate
 	nextEntryTime = firstTickFrames;
 
 	// main loop
@@ -102,10 +102,10 @@ int main()
 	while(!KeyIsPressed(VK_CANCEL))																// check ctrl+break and quit if it's held; otherwise, loop again
 	{
 		//Sleep(0);
-		this_thread::sleep_for(chrono::microseconds((long)sleepLength));						// sleep between checks (number of times per frame dictated by fps and granularity)
+		this_thread::sleep_for(chrono::microseconds((long long)sleepLength));						// sleep between checks (number of times per frame dictated by fps and granularity)
 
 		QueryPerformanceCounter(&tick);															// time since system start in CPU cycles
-		tickFrames = (double)tick.LowPart*targetFPS/(double)ticksPerSecond.LowPart;				// convert to number of frames at target frame rate
+		tickFrames = (double)tick.QuadPart*targetFPS/(double)ticksPerSecond.QuadPart;				// convert to number of frames at target frame rate
 
 		// this line is the gateway, preventing the loop from entering the input checks unless an entire frame at the target frame rate has passed
 		if (!(tickFrames > nextEntryTime)) continue;

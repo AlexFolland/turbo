@@ -84,11 +84,11 @@ int main()
 		 << " numpad 4      | skip-walk left (left 9 frames, release 1 frame, repeat)"			<< endl
 		 << " qwerty Z      |"																	<< endl
 		 << "---------------|---------------------------------------------------------------"	<< endl
-		 << " numpad 6      | skip-walk right (right 9 frames, release 1 frame, repeat)"		<< endl
-		 << " qwerty C      |"																	<< endl
-		 << "---------------|---------------------------------------------------------------"	<< endl
 		 << " numpad 5      | alternate left and right arrow keys each frame"					<< endl
 		 << " qwerty X      |"																	<< endl
+		 << "---------------|---------------------------------------------------------------"	<< endl
+		 << " numpad 6      | skip-walk right (right 9 frames, release 1 frame, repeat)"		<< endl
+		 << " qwerty C      |"																	<< endl
 		 << "---------------|---------------------------------------------------------------"	<< endl
 		 << " ctrl+break    | quit"																<< endl
 		 << "---------------|---------------------------------------------------------------"	<< endl

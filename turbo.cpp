@@ -18,6 +18,16 @@ namespace turbo
 		inputToSend.ki.dwExtraInfo = 0;												// some additional crap; idk
 		SendInput(1, &inputToSend, sizeof(INPUT));
 	}
+
+	bool KeyIsPressed(WORD code, bool isScanCode = false)
+	{
+		if(isScanCode)
+		{
+			HKL kbLayout = GetKeyboardLayout(0);
+			code = MapVirtualKeyEx(code,MAPVK_VSC_TO_VK_EX,kbLayout);
+		}
+		return GetKeyState(code) & 0x8000;
+	}
 }
 
 using namespace turbo;
@@ -29,12 +39,8 @@ int main()
 	unsigned int targetFPS = 50;												// target frames per second
 	unsigned int targetGranularity = 2;											// target number of times to poll per frame at target frame rate
 	LARGE_INTEGER ticksPerSecond;												// timer frequency, defined by QueryPerformanceFrequency()
-	LARGE_INTEGER recheckedFrequency;											// timer frequency, checked again each loop
 	LARGE_INTEGER tick;															// tick to get on every loop for timing
 	unsigned long long tickFrames;												// the above in target frame lengths
-
-	//char kbState[256];														// array for GetKeyboardState() to dump into
-	HKL kbLayout;																// keyboard layout for GetKeyboardLayout()	
 
 	bool laltHeldLast = false;													// whether the space-mashing function key was held in the last loop
 	LARGE_INTEGER laltStart;													// point at which the space-mashing function key began being held
@@ -103,31 +109,11 @@ int main()
 
 	do
 	{
-		//Sleep(1);																			// wait time between input-checking loops (in milliseconds)
-		this_thread::sleep_for(chrono::microseconds((unsigned long long)floor(1000000/(targetGranularity*targetFPS))));									// same as above, but allowing microsecond precision
-		
-		/*
-		QueryPerformanceFrequency(&recheckedFrequency);
-		if(ticksPerSecond.LowPart != recheckedFrequency.LowPart)
-		{
-			cout << "QueryPerformanceFrequency returned a different frequency." << endl;
-			ticksPerSecond = recheckedFrequency;
-		}
-		*/
+		this_thread::sleep_for(chrono::microseconds((unsigned long long)floor(1000000/(targetGranularity*targetFPS))));									// sleep between checks (number of times per frame dictated by fps and granularity)
 
-		QueryPerformanceCounter(&tick);														// generic tick
-		tickFrames = (unsigned long long)floor((unsigned long long)tick.LowPart*targetFPS/(unsigned long long)ticksPerSecond.LowPart);								// convert to WA frames
-
-		kbLayout = GetKeyboardLayout(0);
-/*
-		GetKeyState(0);																		// hackish GetKeyboardState() bug workaround.  thanks, CyberShadow!
-		if(!GetKeyboardState((byte*)kbState))												// GetKeyboardState() execution and error check
-		{
-			cout << "Error getting keyboard state.  GetKeyboardState() returned false." << endl
-				 << "Quitting." << endl;
-			return 1;
-		}
-*/		
+		QueryPerformanceCounter(&tick);																													// generic tick
+		tickFrames = (unsigned long long)floor((unsigned long long)tick.LowPart*targetFPS/(unsigned long long)ticksPerSecond.LowPart);					// convert to WA frames
+	
 		// begin input checks
 		
 		/////////////// left alt - mash space ///////////////
@@ -137,22 +123,14 @@ int main()
 		// the state of the keys after the applications removed the corresponding messages from the message queue
 			// Lex 2007.02.27: this would only matter if you relied on a key to be pressed to press itself in a different way
 			// like if you used space as the space-mashing hotkey.
-		
-		// VP 2007.02.27: this will actually cause it to work 500 times per second, but it should work 
-		// better because the periods when space is up or down will be ~even
-			// Lex 2007.02.27: reverted to the old method because it works a lot better with the WA engine without the delay between release and press
-		
-		// VP 2007.02.27: also, the empty {} and 0 | ... were confusing and distracting
-			// Lex 2007.02.27: i'm keeping the empty {}s for alignment, but removing the useless "0 | "s.
-			// Lex 2012.03.11: removed empty {}s
 
-		if(GetKeyState(VK_MENU) & 0x8000 || GetKeyState(VK_NUMPAD0) & 0x8000)
+		if(KeyIsPressed(VK_MENU) || KeyIsPressed(VK_NUMPAD0))
 		{
 			if (!laltHeldLast)
 			{
 				cout << "space mashing started" << endl;
 				QueryPerformanceCounter(&laltStart);
-				laltStartFrames = (unsigned long long)floor((unsigned long long)laltStart.LowPart*targetFPS/(unsigned long long)ticksPerSecond.LowPart);			// convert to WA frame lengths
+				laltStartFrames = (unsigned long long)floor((unsigned long long)laltStart.LowPart*targetFPS/(unsigned long long)ticksPerSecond.LowPart);// convert to target frame lengths
 				SendKeyboardInput(VK_SPACE);
 				//cout << "space pressed" << endl;
 			}
@@ -172,7 +150,7 @@ int main()
 		}
 		else if(laltHeldLast)																// clean up if user released left alt
 		{
-			if(GetKeyState(VK_SPACE) & 0x8000)
+			if(KeyIsPressed(VK_SPACE))
 			{
 				SendKeyboardInput(VK_SPACE,true);
 				//cout << "space released (during clean-up)" << endl;
@@ -184,7 +162,7 @@ int main()
 
 		/////////////// numpad 4 - skip-walk left ///////////////
 
-		if(GetKeyState(VK_NUMPAD4) & 0x8000 || GetKeyState(MapVirtualKeyEx(0x2C,MAPVK_VSC_TO_VK_EX,kbLayout)) & 0x8000)
+		if(KeyIsPressed(VK_NUMPAD4) || KeyIsPressed(0x2C,true))
 		{
 			if(!leftHeldLast)
 			{
@@ -210,7 +188,7 @@ int main()
 		else if(leftHeldLast)																// clean up if user released numpad 4
 		{
 			cout << "skip-walking left ended" << endl;
-			if(GetKeyState(VK_LEFT) & 0x8000)
+			if(KeyIsPressed(VK_LEFT))
 			{
 				SendKeyboardInput(VK_LEFT,true);
 				//cout << "left released (during clean-up)" << endl;
@@ -221,7 +199,7 @@ int main()
 
 		/////////////// numpad 6 - skip-walk right ///////////////
 
-		if(GetKeyState(VK_NUMPAD6) & 0x8000 || GetKeyState(MapVirtualKeyEx(0x2D,MAPVK_VSC_TO_VK_EX,kbLayout)) & 0x8000)
+		if(KeyIsPressed(VK_NUMPAD6) || KeyIsPressed(0x2D,true))
 		{
 			if(!rightHeldLast)
 			{
@@ -247,7 +225,7 @@ int main()
 		else if(rightHeldLast)																// clean up if user released numpad 6
 		{
 			cout << "skip-walking right ended" << endl;
-			if(GetKeyState(VK_RIGHT) & 0x8000)
+			if(KeyIsPressed(VK_RIGHT))
 			{
 				SendKeyboardInput(VK_RIGHT,true);
 				//cout << "right released (during clean-up)" << endl;
@@ -258,7 +236,7 @@ int main()
 
 		/////////////// numpad 5 - alternate left and right arrow keys ///////////////
 
-		if(GetKeyState(VK_NUMPAD5) & 0x8000 || GetKeyState(MapVirtualKeyEx(0x2E,MAPVK_VSC_TO_VK_EX,kbLayout)) & 0x8000)
+		if(KeyIsPressed(VK_NUMPAD5) || KeyIsPressed(0x2E,true))
 		{
 			if(!alternateHeldLast)
 			{
@@ -298,12 +276,12 @@ int main()
 			if(alternateHeldFrames > lastAlternateHeldFrames);								// keep checking whether a frame is done before cleaning up
 			{
 				cout << "alternating arrow keys ended" << endl;
-				if(GetKeyState(VK_LEFT) & 0x8000)
+				if(KeyIsPressed(VK_LEFT))
 				{
 					SendKeyboardInput(VK_LEFT,true);
 					//cout << "left released (during clean-up)" << endl;
 				}
-				if(GetKeyState(VK_RIGHT) & 0x8000)
+				if(KeyIsPressed(VK_RIGHT))
 				{
 					SendKeyboardInput(VK_RIGHT,true);
 					//cout << "right released (during clean-up)" << endl;
@@ -315,7 +293,7 @@ int main()
 
 		/////////////// ctrl+break - quit ///////////////
 
-	} while(!(GetKeyState(VK_CANCEL) & 0x8000));															// check ctrl+break and quit if it's held; otherwise, loop again
+	} while(!KeyIsPressed(VK_CANCEL));															// check ctrl+break and quit if it's held; otherwise, loop again
 
 	// clean-up
 

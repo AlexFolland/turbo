@@ -78,13 +78,13 @@ int main()
 		 << " numpad 0      | mash space repeatedly, re-pressing each frame"					<< endl
 		 << "               |"																	<< endl
 		 << "---------------|---------------------------------------------------------------"	<< endl
-		 << " numpad 4      | skip-walk left (left 9 frames, release 1 frame, repeat)"			<< endl
+		 << " numpad 4      | flip-walk left (left 9 frames, right 1 frame, repeat)"			<< endl
 		 << " qwerty Z      |"																	<< endl
 		 << "---------------|---------------------------------------------------------------"	<< endl
 		 << " numpad 5      | alternate left and right arrow keys each frame"					<< endl
 		 << " qwerty X      |"																	<< endl
 		 << "---------------|---------------------------------------------------------------"	<< endl
-		 << " numpad 6      | skip-walk right (right 9 frames, release 1 frame, repeat)"		<< endl
+		 << " numpad 6      | flip-walk right (right 9 frames, left 1 frame, repeat)"			<< endl
 		 << " qwerty C      |"																	<< endl
 		 << "---------------|---------------------------------------------------------------"	<< endl
 		 << " ctrl+break    | quit"																<< endl
@@ -151,67 +151,79 @@ int main()
 			mashHeldLast = false;
 		}
 
-		/////////////// numpad 4 - skip-walk left ///////////////
+		/////////////// numpad 4 - flip-walk left ///////////////
 
 		if(KeyIsPressed(VK_NUMPAD4) || KeyIsPressed(0x2C,true))
 		{
 			if(!leftHeldLast)
 			{
-				cout << "skip-walking left started" << endl;
-				leftStartFrames = tickFrames;												// set start timestamp
-				//SendKeyboardInput(VK_LEFT);
+				cout << "flip-walking left started" << endl;
+				SendKeyboardInput(VK_LEFT);
 				//cout << "left pressed" << endl;
 			}
 
-			leftHeldFrames = (unsigned long long)(tickFrames - leftStartFrames);			// get however many frames this functionality's bind has been held
+			leftHeldFrames = leftHeldFrames + 1;			// get however many frames this functionality's bind has been held
 			targetLeftState = (leftHeldFrames % 11 != 10);				// at the 9th frame, let go of left for a frame
 			if(KeyIsPressed(VK_LEFT) != targetLeftState)									// VP 2007.02.27: synchronize desired state with actual state
 			{
-				SendKeyboardInput(VK_LEFT, !targetLeftState);
-				//cout << "left " << (targetLeftState ? "pressed" : "released") << endl;
+				SendKeyboardInput((targetLeftState ? VK_RIGHT : VK_LEFT), true);
+				//cout << (targetLeftState ? "right " : "left ") << "released" << endl;
+				SendKeyboardInput((targetLeftState ? VK_LEFT : VK_RIGHT));
+				//cout << (targetLeftState ? "left " : "right ") << "pressed" << endl;
 			}
 			leftHeldLast = true;
 		}
 		else if(leftHeldLast)																// clean up if user released numpad 4
 		{
-			cout << "skip-walking left ended" << endl;
+			cout << "flip-walking left ended" << endl;
 			if(KeyIsPressed(VK_LEFT))
 			{
 				SendKeyboardInput(VK_LEFT,true);
 				//cout << "left released (during clean-up)" << endl;
 			}
+			if(KeyIsPressed(VK_RIGHT))
+			{
+				SendKeyboardInput(VK_RIGHT,true);
+				//cout << "right released (during clean-up)" << endl;
+			}
 			leftHeldLast = false;
 			leftHeldFrames = 0;
 		}
 
-		/////////////// numpad 6 - skip-walk right ///////////////
+		/////////////// numpad 6 - flip-walk right ///////////////
 
 		if(KeyIsPressed(VK_NUMPAD6) || KeyIsPressed(0x2E,true))
 		{
 			if(!rightHeldLast)
 			{
-				cout << "skip-walking right started" << endl;
-				rightStartFrames = tickFrames;												// set start timestamp
-				//SendKeyboardInput(VK_RIGHT);
+				cout << "flip-walking right started" << endl;
+				SendKeyboardInput(VK_RIGHT);
 				//cout << "right pressed" << endl;
 			}
 
-			rightHeldFrames = (unsigned long long)(tickFrames - rightStartFrames);								// get however many frames this functionality's bind has been held
+			rightHeldFrames = rightHeldFrames + 1;								// get however many frames this functionality's bind has been held
 			targetRightState = (rightHeldFrames % 11 != 10);							// at the 9th frame, let go of left for a frame
 			if(KeyIsPressed(VK_RIGHT) != targetRightState)									// VP 2007.02.27: synchronize desired state with actual state
 			{
-				SendKeyboardInput(VK_RIGHT, !targetRightState);
-				//cout << "right " << (targetRightState ? "pressed" : "released") << endl;
+				SendKeyboardInput((targetRightState ? VK_LEFT : VK_RIGHT), true);
+				//cout << (targetRightState ? "left " : "right ") << "released" << endl;
+				SendKeyboardInput((targetRightState ? VK_RIGHT : VK_LEFT));
+				//cout << (targetRightState ? "right " : "left ") << "pressed" << endl;
 			}
 			rightHeldLast = true;
 		}
 		else if(rightHeldLast)																// clean up if user released numpad 6
 		{
-			cout << "skip-walking right ended" << endl;
+			cout << "flip-walking right ended" << endl;
 			if(KeyIsPressed(VK_RIGHT))
 			{
 				SendKeyboardInput(VK_RIGHT,true);
 				//cout << "right released (during clean-up)" << endl;
+			}
+			if(KeyIsPressed(VK_LEFT))
+			{
+				SendKeyboardInput(VK_LEFT,true);
+				//cout << "left released (during clean-up)" << endl;
 			}
 			rightHeldLast = false;
 			rightHeldFrames = 0;

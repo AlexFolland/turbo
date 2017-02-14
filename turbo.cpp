@@ -7,9 +7,9 @@ using namespace std;
 
 // declarations and definitions
 
-double targetFPS = 50;																				// target frames per second
-double targetGranularity = 2;																		// target number of times to poll per frame at target frame rate
-unsigned long long sleepLength = (unsigned long long)(1000000.0/(targetGranularity*targetFPS));
+double targetFPS = 50.0;																			// target frames per second; set to target application's input polling rate
+double targetGranularity = 2.0;																		// target number of times to poll per frame at target frame rate
+double sleepLength = (1000000.0/(targetGranularity*targetFPS));										// rough time between timing loops
 
 LARGE_INTEGER ticksPerSecond;																		// timer frequency, defined by QueryPerformanceFrequency()
 LARGE_INTEGER firstTick;																			// tick to get before looping for synchronization
@@ -94,14 +94,15 @@ int main()
 		 << "------------"																		<< endl;
 
 	QueryPerformanceCounter(&firstTick);														// time since system start in CPU cycles, grabbed here for synchronization
-	firstTickFrames = (double)firstTick.LowPart*targetFPS/(double)ticksPerSecond.LowPart;			// convert to number of frames at target frame rate
+	firstTickFrames = (double)firstTick.LowPart*targetFPS/(double)ticksPerSecond.LowPart;		// convert to number of frames at target frame rate
 	nextEntryTime = firstTickFrames;
 
 	// main loop
 
-	do
+	while(!KeyIsPressed(VK_CANCEL))																// check ctrl+break and quit if it's held; otherwise, loop again
 	{
-		this_thread::sleep_for(chrono::microseconds(sleepLength));								// sleep between checks (number of times per frame dictated by fps and granularity)
+		//Sleep(0);
+		this_thread::sleep_for(chrono::microseconds((long)sleepLength));						// sleep between checks (number of times per frame dictated by fps and granularity)
 
 		QueryPerformanceCounter(&tick);															// time since system start in CPU cycles
 		tickFrames = (double)tick.LowPart*targetFPS/(double)ticksPerSecond.LowPart;				// convert to number of frames at target frame rate
@@ -249,10 +250,7 @@ int main()
 			}
 			alternateHeldLast = false;
 		}
-
-		/////////////// ctrl+break - quit ///////////////
-
-	} while(!KeyIsPressed(VK_CANCEL));															// check ctrl+break and quit if it's held; otherwise, loop again
+	}
 
 	// clean-up
 

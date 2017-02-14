@@ -101,8 +101,8 @@ int main()
 
 	while(!KeyIsPressed(VK_CANCEL))																// check ctrl+break and quit if it's held; otherwise, loop again
 	{
-		//Sleep(0);
-		this_thread::sleep_for(chrono::microseconds((long long)sleepLength));						// sleep between checks (number of times per frame dictated by fps and granularity)
+		Sleep(1);
+		//this_thread::sleep_for(chrono::microseconds((long long)sleepLength));						// sleep between checks (number of times per frame dictated by fps and granularity)
 
 		QueryPerformanceCounter(&tick);															// time since system start in CPU cycles
 		tickFrames = (double)tick.QuadPart*targetFPS/(double)ticksPerSecond.QuadPart;				// convert to number of frames at target frame rate

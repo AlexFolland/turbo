@@ -70,7 +70,7 @@ int main()
 		return 1;
 	}
 
-	float sleepLengthFrames = (float)sleepLength/1000000.0f*targetFPS/(float)ticksPerSecond.LowPart;
+	// float sleepLengthFrames = (float)sleepLength/1000000.0f*targetFPS/(float)ticksPerSecond.LowPart;
 	float halfSleepLengthFramesPlusOne = (((float)sleepLength/1000000.0f*targetFPS/(float)ticksPerSecond.LowPart)/2.0f)+1.0f;
 
 	// user instructions

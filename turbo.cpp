@@ -112,7 +112,7 @@ int main()
 		lastTickFrames = tickFrames;
 		tickFrames = (float)tick.LowPart*targetFPS/(float)ticksPerSecond.LowPart;														// convert to number of frames at target frame rate
 
-		if (!(tickFrames - (sleepLengthFrames/2) >= lastTickFrames)) continue;
+		if (!(tickFrames >= floor(lastTickFrames) + (1.0f + (sleepLengthFrames/2)))) continue;
 	
 		// begin input checks
 		
@@ -243,24 +243,10 @@ int main()
 			lastAlternateHeldFrames = alternateHeldFrames;
 			alternateHeldFrames = tickFrames - alternateStartFrames;						// get however many frames this functionality's bind has been held
 			
-			if(alternateHeldFrames > lastAlternateHeldFrames)								// only if a frame has passed
-			{
-				goingRight = !goingRight;								// every other frame
-				if(goingRight)
-				{
-					SendKeyboardInput(VK_LEFT,true);
-					SendKeyboardInput(VK_RIGHT);
-				}
-				else
-				{
-					SendKeyboardInput(VK_RIGHT,true);
-					SendKeyboardInput(VK_LEFT);
-				}
-				//cout << (goingRight ? "left released" : "right released") << endl;
-				//cout << (goingRight ? "right pressed" : "left pressed") << endl;
-			}
-			//leftHeldFrames = 0;
-			//rightHeldFrames = 0;
+			goingRight = !goingRight;								// every other frame
+			SendKeyboardInput((goingRight ? VK_LEFT : VK_RIGHT), true);
+			SendKeyboardInput((goingRight ? VK_RIGHT : VK_LEFT));
+
 			alternateHeldLast = true;
 		}
 		else if(alternateHeldLast)															// clean up if user released numpad 5

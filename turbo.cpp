@@ -18,12 +18,10 @@ double nextEntryTime = 0.0;																			// for time comparison with previo
 bool mashHeldLast = false;																			// whether the space-mashing function key was held in the last loop
 
 bool leftHeldLast = false;																			// whether the left skip-walk function key was held in the last loop
-double leftStartFrames;																				// leftStart in target frame lengths
 unsigned long long leftHeldFrames;																	// length of time the left skip-walk function key was held for
 bool targetLeftState;
 
 bool rightHeldLast = false;																			// whether the right skip-walk function key was held in the last loop
-double rightStartFrames;																			// rightStart in target frame lengths
 unsigned long long rightHeldFrames;																	// length of time the right skip-walk function key was held for
 bool targetRightState;
 

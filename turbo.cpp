@@ -14,13 +14,13 @@ unsigned long long sleepLength = (unsigned long long)(1000000.0f/(targetGranular
 LARGE_INTEGER ticksPerSecond;												// timer frequency, defined by QueryPerformanceFrequency()
 LARGE_INTEGER tick;															// tick to get on every loop for timing
 float tickFrames;												// the above in target frame lengths
-float lastTickFrames = 0;										// for time comparison with previous loop
+float lastTickFrames = 0.0f;										// for time comparison with previous loop
 
 bool laltHeldLast = false;													// whether the space-mashing function key was held in the last loop
-float laltStartFrames = 0;										// laltStart in target frame lengths
-float laltTickFrames = 0;										// laltTick in target frame lengths
-float laltHeldFrames = 0;										// number of frames the space-mashing function key was held so far
-float lastLaltHeldFrames = 0;									// number of frames the space-mashing function key was held as of the previous loop
+float laltStartFrames = 0.0f;										// laltStart in target frame lengths
+float laltTickFrames = 0.0f;										// laltTick in target frame lengths
+float laltHeldFrames = 0.0f;										// number of frames the space-mashing function key was held so far
+float lastLaltHeldFrames = 0.0f;									// number of frames the space-mashing function key was held as of the previous loop
 
 bool leftHeldLast = false;													// whether the left skip-walk function key was held in the last loop
 float leftStartFrames;											// leftStart in target frame lengths
@@ -33,11 +33,7 @@ float rightTickFrames;											// rightTick in target frame lengths
 float rightHeldFrames;											// length of time the left skip-walk function key was held for
 
 bool alternateHeldLast = false;												// whether the arrow-key-alternating function key was held in the last loop
-bool alternateDown = false;													// ..
 float alternateStartFrames;									// alternateStart in target frame lengths
-float alternateTickFrames;										// alternateTick in target frame lengths
-float alternateHeldFrames;										// length of time the arrow-key-alternating function key was held for
-float lastAlternateHeldFrames;									// number of frames the arrow-key-alternating function key was held as of the previous loop
 bool goingRight = false;													// whether currently going right
 
 HKL kbLayout = GetKeyboardLayout(0);
@@ -106,13 +102,14 @@ int main()
 
 	do
 	{
-		this_thread::sleep_for(chrono::microseconds(sleepLength));							// sleep between checks (number of times per frame dictated by fps and granularity)
+		this_thread::sleep_for(chrono::microseconds(sleepLength));								// sleep between checks (number of times per frame dictated by fps and granularity)
 
-		QueryPerformanceCounter(&tick);																												// time since system start in CPU cycles
-		lastTickFrames = tickFrames;
-		tickFrames = (float)tick.LowPart*targetFPS/(float)ticksPerSecond.LowPart;														// convert to number of frames at target frame rate
+		QueryPerformanceCounter(&tick);															// time since system start in CPU cycles
+		lastTickFrames = tickFrames;															// tick at last loop, used for checking whether to do input checks
+		tickFrames = (float)tick.LowPart*targetFPS/(float)ticksPerSecond.LowPart;				// convert to number of frames at target frame rate
 
-		if (!(tickFrames >= floor(lastTickFrames) + (1.0f + (sleepLengthFrames/2)))) continue;
+		// this line is the gateway, preventing the loop from entering the input checks unless an entire frame at the target frame rate has passed
+		if (!(tickFrames >= floor(lastTickFrames) + (1.0f + (sleepLengthFrames/2)))) continue;	// hardcore synchronization or TheDailyWTF canditate?  you decide!
 	
 		// begin input checks
 		
@@ -234,15 +231,11 @@ int main()
 			if(!alternateHeldLast)
 			{
 				cout << "alternating arrow keys started" << endl;
-				alternateStartFrames = tickFrames;											// set start timestamp
 				SendKeyboardInput(goingRight ? VK_LEFT : VK_RIGHT);
 				//cout << (goingRight ? "left" : "right") << " pressed" << endl;
 				goingRight = !goingRight;
 			}
 
-			lastAlternateHeldFrames = alternateHeldFrames;
-			alternateHeldFrames = tickFrames - alternateStartFrames;						// get however many frames this functionality's bind has been held
-			
 			goingRight = !goingRight;								// every other frame
 			SendKeyboardInput((goingRight ? VK_LEFT : VK_RIGHT), true);
 			SendKeyboardInput((goingRight ? VK_RIGHT : VK_LEFT));
@@ -251,24 +244,18 @@ int main()
 		}
 		else if(alternateHeldLast)															// clean up if user released numpad 5
 		{
-			lastAlternateHeldFrames = alternateHeldFrames;
-			alternateHeldFrames = tickFrames - alternateStartFrames;	
-			if(alternateHeldFrames > lastAlternateHeldFrames);								// keep checking whether a frame is done before cleaning up
+			cout << "alternating arrow keys ended" << endl;
+			if(KeyIsPressed(VK_LEFT))
 			{
-				cout << "alternating arrow keys ended" << endl;
-				if(KeyIsPressed(VK_LEFT))
-				{
-					SendKeyboardInput(VK_LEFT,true);
-					//cout << "left released (during clean-up)" << endl;
-				}
-				if(KeyIsPressed(VK_RIGHT))
-				{
-					SendKeyboardInput(VK_RIGHT,true);
-					//cout << "right released (during clean-up)" << endl;
-				}
-				alternateHeldLast = false;
-				alternateHeldFrames = 0;
+				SendKeyboardInput(VK_LEFT,true);
+				//cout << "left released (during clean-up)" << endl;
 			}
+			if(KeyIsPressed(VK_RIGHT))
+			{
+				SendKeyboardInput(VK_RIGHT,true);
+				//cout << "right released (during clean-up)" << endl;
+			}
+			alternateHeldLast = false;
 		}
 
 		/////////////// ctrl+break - quit ///////////////

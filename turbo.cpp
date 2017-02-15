@@ -70,8 +70,8 @@ int main()
 
 	cout << " input         | effect"															<< endl
 		 << "---------------|---------------------------------------------------------------"	<< endl
-		 << " numpad 0      | mash space repeatedly, re-pressing each frame"					<< endl
-		 << "               |"																	<< endl
+		 << " alt (either)  | mash space repeatedly, re-pressing each frame"					<< endl
+		 << " numpad 0      |"																	<< endl
 		 << "---------------|---------------------------------------------------------------"	<< endl
 		 << " numpad 4      | flip-walk left (left 9 frames, right 1 frame, repeat)"			<< endl
 		 << " qwerty Z      |"																	<< endl

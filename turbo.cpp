@@ -94,7 +94,7 @@ int main()
 		 << "debug output"																		<< endl
 		 << "------------"																		<< endl
 		 << "target frame rate is " << targetFPS << " Hz"										<< endl
-		 << "polling " << targetGranularity << " times per frame (" << targetFPS*targetGranularity << " Hz)" << endl;
+		 << "polling timer " << targetGranularity << " times per frame (<" << targetFPS*targetGranularity << " Hz)" << endl;
 
 	QueryPerformanceCounter(&tick);															// time since system start in CPU cycles, grabbed here for synchronization
 	tickFrames = (double)tick.QuadPart*targetFPS/(double)ticksPerSecond.QuadPart;			// convert to number of frames at target frame rate

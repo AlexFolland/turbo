@@ -8,4 +8,4 @@ Use Alt or Numpad0 to mash the space bar each frame, Z or Numpad4 to flip-walk l
 
 ## Disclaimer
 
-I don't condone cheating.  I don't use this to cheat, either.  I made this for fun, to see if I could align keyboard layout with the game's frame rate without hooking the game's input directly, and so I could wiggle back and forth amusingly.  If you use this for cheating, it's completely obvious anyway, so you shouldn't if you care about your reputation and if you want to feel good about your accomplishments.
+I don't condone cheating.  I don't use this to cheat, either.  I made this for fun, to see if I could align keyboard input with the game's frame rate without hooking the game's input directly, and so I could wiggle back and forth amusingly.  If you use this for cheating, it's completely obvious anyway, so you shouldn't if you care about your reputation and if you want to feel good about your accomplishments.

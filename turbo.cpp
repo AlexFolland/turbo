@@ -1,5 +1,6 @@
 #include <iostream>
 #include <Windows.h>
+#include <thread>
 using namespace std;
 
 // declarations and definitions
@@ -94,10 +95,9 @@ int main()
 
 	// main loop
 
-	while(!KeyIsPressed(VK_CANCEL))															// check ctrl+break and quit if it's held; otherwise, loop again
+	do
 	{
-		Sleep(1);
-		//this_thread::sleep_for(chrono::microseconds((long long)sleepLength));				// sleep between checks (number of times per frame dictated by fps and granularity)
+		this_thread::sleep_for(chrono::microseconds((long long)sleepLength));				// sleep between checks (number of times per frame dictated by fps and granularity)
 
 		QueryPerformanceCounter(&tick);														// time since system start in CPU cycles
 		tickFrames = (double)tick.QuadPart*targetFPS/(double)ticksPerSecond.QuadPart;		// convert to number of frames at target frame rate
@@ -108,6 +108,8 @@ int main()
 		nextEntryTime = nextEntryTime + 1.0;												// wait 1 frame before next input checks
 
 		// begin input checks
+
+		if(KeyIsPressed(VK_CANCEL)) exit(EXIT_SUCCESS);										// check ctrl+break and quit if it's held
 		
 		/////////////// left alt - mash space ///////////////
 
@@ -257,7 +259,7 @@ int main()
 			}
 			alternateHeldLast = false;
 		}
-	}
+	} while(1);
 
 	// clean-up
 

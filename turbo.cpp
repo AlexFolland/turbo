@@ -87,7 +87,8 @@ int main()
 		 << " numpad 6      | flip-walk right (right 9 frames, left 1 frame, repeat)"			<< endl
 		 << " qwerty C      |"																	<< endl
 		 << "---------------|---------------------------------------------------------------"	<< endl
-		 << " ctrl+break/Q  | quit"																<< endl
+		 << " ctrl+break    | quit"																<< endl
+		 << " ctrl+qwerty Q |"																	<< endl
 		 << "---------------|---------------------------------------------------------------"	<< endl
 		 <<																						endl
 		 << "debug output"																		<< endl

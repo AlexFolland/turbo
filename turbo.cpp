@@ -4,29 +4,29 @@ using namespace std;
 
 // declarations and definitions
 
-double targetFPS = 50.0;																			// target frames per second; set to target application's input polling rate
-double targetGranularity = 4.0;																		// target number of times to poll per frame at target frame rate
-double sleepLength = (1000000.0/(targetGranularity*targetFPS));										// rough time between timing loops
+double targetFPS = 50.0;															// target frames per second; set to target application's input polling rate
+double targetGranularity = 4.0;														// target number of times to poll per frame at target frame rate
+double sleepLength = (1000000.0/(targetGranularity*targetFPS));						// rough time between timing loops
 
-LARGE_INTEGER ticksPerSecond;																		// timer frequency, defined by QueryPerformanceFrequency()
-LARGE_INTEGER firstTick;																			// tick to get before looping for synchronization
-double firstTickFrames;																				// the above in target frame lengths
-LARGE_INTEGER tick;																					// tick to get on every loop for timing
-double tickFrames;																					// the above in target frame lengths
-double nextEntryTime = 0.0;																			// for time comparison with previous loop
+LARGE_INTEGER ticksPerSecond;														// timer frequency, defined by QueryPerformanceFrequency()
+LARGE_INTEGER firstTick;															// tick to get before looping for synchronization
+double firstTickFrames;																// the above in target frame lengths
+LARGE_INTEGER tick;																	// tick to get on every loop for timing
+double tickFrames;																	// the above in target frame lengths
+double nextEntryTime = 0.0;															// for time comparison with previous loop
 
-bool mashHeldLast = false;																			// whether the space-mashing function key was held in the last loop
+bool mashHeldLast = false;															// whether the space-mashing function key was held in the last loop
 
-bool leftHeldLast = false;																			// whether the left skip-walk function key was held in the last loop
-unsigned long long leftHeldFrames;																	// length of time the left skip-walk function key was held for
+bool leftHeldLast = false;															// whether the left skip-walk function key was held in the last loop
+unsigned long long leftHeldFrames;													// length of time the left skip-walk function key was held for
 bool targetLeftState;
 
-bool rightHeldLast = false;																			// whether the right skip-walk function key was held in the last loop
-unsigned long long rightHeldFrames;																	// length of time the right skip-walk function key was held for
+bool rightHeldLast = false;															// whether the right skip-walk function key was held in the last loop
+unsigned long long rightHeldFrames;													// length of time the right skip-walk function key was held for
 bool targetRightState;
 
-bool alternateHeldLast = false;																		// whether the arrow-key-alternating function key was held in the last loop
-bool goingRight = false;																			// whether currently going right
+bool alternateHeldLast = false;														// whether the arrow-key-alternating function key was held in the last loop
+bool goingRight = false;															// whether currently going right
 
 HKL kbLayout = GetKeyboardLayout(0);
 
@@ -59,7 +59,7 @@ using namespace turbo;
 int main()
 {
 
-	if(!QueryPerformanceFrequency(&ticksPerSecond))								// QueryPerformanceFrequency() execution and error check
+	if(!QueryPerformanceFrequency(&ticksPerSecond))									// QueryPerformanceFrequency() execution and error check
 	{
 		cout << "Error: QueryPerformanceFrequency() returned false.  This system has no" << endl
 			 << "high-resolution timer.  Quitting." << endl;
@@ -88,24 +88,24 @@ int main()
 		 << "debug output"																		<< endl
 		 << "------------"																		<< endl;
 
-	QueryPerformanceCounter(&firstTick);														// time since system start in CPU cycles, grabbed here for synchronization
-	firstTickFrames = (double)firstTick.QuadPart*targetFPS/(double)ticksPerSecond.QuadPart;		// convert to number of frames at target frame rate
+	QueryPerformanceCounter(&firstTick);													// time since system start in CPU cycles, grabbed here for synchronization
+	firstTickFrames = (double)firstTick.QuadPart*targetFPS/(double)ticksPerSecond.QuadPart;	// convert to number of frames at target frame rate
 	nextEntryTime = firstTickFrames;
 
 	// main loop
 
-	while(!KeyIsPressed(VK_CANCEL))																// check ctrl+break and quit if it's held; otherwise, loop again
+	while(!KeyIsPressed(VK_CANCEL))															// check ctrl+break and quit if it's held; otherwise, loop again
 	{
 		Sleep(1);
-		//this_thread::sleep_for(chrono::microseconds((long long)sleepLength));						// sleep between checks (number of times per frame dictated by fps and granularity)
+		//this_thread::sleep_for(chrono::microseconds((long long)sleepLength));				// sleep between checks (number of times per frame dictated by fps and granularity)
 
-		QueryPerformanceCounter(&tick);															// time since system start in CPU cycles
-		tickFrames = (double)tick.QuadPart*targetFPS/(double)ticksPerSecond.QuadPart;				// convert to number of frames at target frame rate
+		QueryPerformanceCounter(&tick);														// time since system start in CPU cycles
+		tickFrames = (double)tick.QuadPart*targetFPS/(double)ticksPerSecond.QuadPart;		// convert to number of frames at target frame rate
 
 		// this line is the gateway, preventing the loop from entering the input checks unless an entire frame at the target frame rate has passed
 		if (!(tickFrames > nextEntryTime)) continue;
 
-		nextEntryTime = nextEntryTime + 1.0;													// wait 1 frame before next input checks
+		nextEntryTime = nextEntryTime + 1.0;												// wait 1 frame before next input checks
 
 		// begin input checks
 		
@@ -157,8 +157,8 @@ int main()
 				//cout << "left pressed" << endl;
 			}
 
-			leftHeldFrames = leftHeldFrames + 1;			// get however many frames this functionality's bind has been held
-			targetLeftState = (leftHeldFrames % 11 != 10);				// at the 9th frame, let go of left for a frame
+			leftHeldFrames = leftHeldFrames + 1;											// get however many frames this functionality's bind has been held
+			targetLeftState = (leftHeldFrames % 11 != 10);									// at the 9th frame, let go of left for a frame
 			if(KeyIsPressed(VK_LEFT) != targetLeftState)									// VP 2007.02.27: synchronize desired state with actual state
 			{
 				SendKeyboardInput((targetLeftState ? VK_RIGHT : VK_LEFT), true);
@@ -196,8 +196,8 @@ int main()
 				//cout << "right pressed" << endl;
 			}
 
-			rightHeldFrames = rightHeldFrames + 1;								// get however many frames this functionality's bind has been held
-			targetRightState = (rightHeldFrames % 11 != 10);							// at the 9th frame, let go of left for a frame
+			rightHeldFrames = rightHeldFrames + 1;											// get however many frames this functionality's bind has been held
+			targetRightState = (rightHeldFrames % 11 != 10);								// at the 9th frame, let go of left for a frame
 			if(KeyIsPressed(VK_RIGHT) != targetRightState)									// VP 2007.02.27: synchronize desired state with actual state
 			{
 				SendKeyboardInput((targetRightState ? VK_LEFT : VK_RIGHT), true);

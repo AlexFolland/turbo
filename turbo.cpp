@@ -51,6 +51,12 @@ namespace turbo
 		}
 		return GetKeyState(code) & 0x8000;
 	}
+
+	void quit(int code)
+	{
+		cout << "quitting..." << endl;
+		std::exit(code);
+	}
 }
 
 using namespace turbo;
@@ -61,8 +67,8 @@ int main()
 	if(!QueryPerformanceFrequency(&ticksPerSecond))									// QueryPerformanceFrequency() execution and error check
 	{
 		cout << "Error: QueryPerformanceFrequency() returned false.  This system has no" << endl
-			 << "high-resolution timer.  Quitting." << endl;
-		exit(EXIT_FAILURE);
+			 << "high-resolution timer." << endl;
+		quit(EXIT_FAILURE);
 	}
 
 	// user instructions
@@ -81,7 +87,7 @@ int main()
 		 << " numpad 6      | flip-walk right (right 9 frames, left 1 frame, repeat)"			<< endl
 		 << " qwerty C      |"																	<< endl
 		 << "---------------|---------------------------------------------------------------"	<< endl
-		 << " ctrl+break    | quit"																<< endl
+		 << " ctrl+break/Q  | quit"																<< endl
 		 << "---------------|---------------------------------------------------------------"	<< endl
 		 <<																						endl
 		 << "debug output"																		<< endl
@@ -107,7 +113,7 @@ int main()
 
 		// begin input checks
 
-		if(KeyIsPressed(VK_CANCEL)) exit(EXIT_SUCCESS);										// check ctrl+break and quit if it's held
+		if(KeyIsPressed(VK_CANCEL) || (KeyIsPressed(VK_CONTROL) && KeyIsPressed(0x10,true))) quit(EXIT_SUCCESS);										// check ctrl+break and quit if it's held
 		
 		/////////////// left alt - mash space ///////////////
 
@@ -258,9 +264,4 @@ int main()
 			alternateHeldLast = false;
 		}
 	} while(1);
-
-	// clean-up
-
-	cout << "quitting..." << endl;
-	exit(EXIT_SUCCESS);
 }

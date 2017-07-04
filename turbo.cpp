@@ -6,7 +6,7 @@ using namespace std;
 // declarations and definitions
 
 double targetFPS = 50.0;															// target frames per second; set to target application's input polling rate
-double targetGranularity = 4.0;														// target number of times to poll per frame at target frame rate
+double targetGranularity = 8.0;														// target number of times to poll timer per frame at target frame rate
 double sleepLength = (1000000.0/(targetGranularity*targetFPS));						// rough time between timing loops
 
 LARGE_INTEGER ticksPerSecond;														// timer frequency, defined by QueryPerformanceFrequency()

@@ -1,6 +1,6 @@
 # turbo
 
-This is a Windows tool with custom hard-coded keyboard macros for Worms Armageddon.  However, it works for anything, as it simply sends keyboard input with precise timing at a target frame rate.  In the case of WA, that frame rate is 50Hz.  The target frame rate can be edited at the top of the code and the program rebuilt easily with GCC.
+This is a Windows tool with custom hard-coded keyboard macros for Worms Armageddon.  However, it works for anything, as it simply sends keyboard input with precise timing at a target frame rate.  In the case of WA, that frame rate is 50Hz.  The target frame rate can be edited at the top of the code and the program rebuilt easily with GCC from msys2's mingw-w64.  The GCC command to build it is ```g++ -O0 -o turbo.exe turbo.cpp```.
 
 ## Usage
 

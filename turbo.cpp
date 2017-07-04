@@ -10,8 +10,6 @@ double targetGranularity = 4.0;														// target number of times to poll p
 double sleepLength = (1000000.0/(targetGranularity*targetFPS));						// rough time between timing loops
 
 LARGE_INTEGER ticksPerSecond;														// timer frequency, defined by QueryPerformanceFrequency()
-LARGE_INTEGER firstTick;															// tick to get before looping for synchronization
-double firstTickFrames;																// the above in target frame lengths
 LARGE_INTEGER tick;																	// tick to get on every loop for timing
 double tickFrames;																	// the above in target frame lengths
 double nextEntryTime = 0.0;															// for time comparison with previous loop
@@ -64,7 +62,7 @@ int main()
 	{
 		cout << "Error: QueryPerformanceFrequency() returned false.  This system has no" << endl
 			 << "high-resolution timer.  Quitting." << endl;
-		return 1;
+		exit(EXIT_FAILURE);
 	}
 
 	// user instructions
@@ -89,9 +87,9 @@ int main()
 		 << "debug output"																		<< endl
 		 << "------------"																		<< endl;
 
-	QueryPerformanceCounter(&firstTick);													// time since system start in CPU cycles, grabbed here for synchronization
-	firstTickFrames = (double)firstTick.QuadPart*targetFPS/(double)ticksPerSecond.QuadPart;	// convert to number of frames at target frame rate
-	nextEntryTime = firstTickFrames;
+	QueryPerformanceCounter(&tick);															// time since system start in CPU cycles, grabbed here for synchronization
+	tickFrames = (double)tick.QuadPart*targetFPS/(double)ticksPerSecond.QuadPart;			// convert to number of frames at target frame rate
+	nextEntryTime = tickFrames;
 
 	// main loop
 
@@ -264,5 +262,5 @@ int main()
 	// clean-up
 
 	cout << "quitting..." << endl;
-	return 0;
+	exit(EXIT_SUCCESS);
 }

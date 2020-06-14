@@ -1,6 +1,6 @@
 #!/bin/sh
 cd -- "$(dirname -- "$0")"
 
-g++ -O0 -o turbo.exe turbo.cpp
+g++ -O3 -o turbo.exe turbo.cpp
 echo "Press any keyboard key to close the window."
 read

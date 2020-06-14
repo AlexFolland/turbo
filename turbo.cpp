@@ -52,6 +52,14 @@ namespace turbo
 		return GetKeyState(code) & 0x8000;
 	}
 
+	void ReleaseKey(WORD code)
+	{
+		if (KeyIsPressed(code))
+		{
+			SendKeyboardInput(code, true);
+		}
+	}
+
 	void quit(int code)
 	{
 		cout << "quitting..." << endl;
@@ -94,6 +102,7 @@ int main()
 		 << "debug output"																		<< endl
 		 << "------------"																		<< endl
 		 << "target frame rate is " << targetFPS << " Hz"										<< endl
+		 << "ticksPerSecond is " << ticksPerSecond.QuadPart										<< endl
 		 << "polling timer " << targetGranularity << " times per frame (<" << targetFPS*targetGranularity << " Hz)" << endl;
 
 	QueryPerformanceCounter(&tick);															// time since system start in CPU cycles, grabbed here for synchronization
@@ -107,24 +116,18 @@ int main()
 		this_thread::sleep_for(chrono::microseconds((long long)sleepLength));				// sleep between checks (number of times per frame dictated by fps and granularity)
 
 		QueryPerformanceCounter(&tick);														// time since system start in CPU cycles
-		tickFrames = (double)tick.QuadPart*targetFPS/(double)ticksPerSecond.QuadPart;		// convert to number of frames at target frame rate
+		tickFrames = ((double)tick.QuadPart*targetFPS/(double)ticksPerSecond.QuadPart);		// convert to number of frames at target frame rate
 
 		// this line is the gateway, preventing the loop from entering the input checks unless an entire frame at the target frame rate has passed
+		//cout << "tickFrames is " << to_string(tickFrames) << endl;
 		if (!(tickFrames > nextEntryTime)) continue;
-
+		//cout << "frame " << to_string((int)floor(nextEntryTime)) << endl;
+		//cout << "entered at    " << to_string(tickFrames) << endl;
 		nextEntryTime = nextEntryTime + 1.0;												// wait 1 frame before next input checks
-
 		// begin input checks
-
 		if(KeyIsPressed(VK_CANCEL) || (KeyIsPressed(VK_CONTROL) && KeyIsPressed(0x10,true))) quit(EXIT_SUCCESS);										// check ctrl+break and quit if it's held
 		
 		/////////////// left alt - mash space ///////////////
-
-		// VP 2007.02.27: relying on GetKeyboardState whether space is globally down or not is wrong
-		// because keybd_event puts stuff in the global event queue - while GetKeyboardState only gets 
-		// the state of the keys after the applications removed the corresponding messages from the message queue
-			// Lex 2007.02.27: this would only matter if you relied on a key to be pressed to press itself in a different way
-			// like if you used space as the space-mashing hotkey.
 
 		kbLayout = GetKeyboardLayout(0);
 
@@ -146,11 +149,7 @@ int main()
 		}
 		else if(mashHeldLast)																// clean up if user released the space-mashing key
 		{
-			if(KeyIsPressed(VK_SPACE))
-			{
-				SendKeyboardInput(VK_SPACE,true);
-				//cout << "space released (during clean-up)" << endl;
-			}
+			ReleaseKey(VK_SPACE);
 			cout << "space mashing ended" << endl;
 			mashHeldLast = false;
 		}
@@ -180,16 +179,8 @@ int main()
 		else if(leftHeldLast)																// clean up if user released numpad 4
 		{
 			cout << "flip-walking left ended" << endl;
-			if(KeyIsPressed(VK_LEFT))
-			{
-				SendKeyboardInput(VK_LEFT,true);
-				//cout << "left released (during clean-up)" << endl;
-			}
-			if(KeyIsPressed(VK_RIGHT))
-			{
-				SendKeyboardInput(VK_RIGHT,true);
-				//cout << "right released (during clean-up)" << endl;
-			}
+			ReleaseKey(VK_LEFT);
+			ReleaseKey(VK_RIGHT);
 			leftHeldLast = false;
 			leftHeldFrames = 0;
 		}
@@ -219,16 +210,8 @@ int main()
 		else if(rightHeldLast)																// clean up if user released numpad 6
 		{
 			cout << "flip-walking right ended" << endl;
-			if(KeyIsPressed(VK_RIGHT))
-			{
-				SendKeyboardInput(VK_RIGHT,true);
-				//cout << "right released (during clean-up)" << endl;
-			}
-			if(KeyIsPressed(VK_LEFT))
-			{
-				SendKeyboardInput(VK_LEFT,true);
-				//cout << "left released (during clean-up)" << endl;
-			}
+			ReleaseKey(VK_LEFT);
+			ReleaseKey(VK_RIGHT);
 			rightHeldLast = false;
 			rightHeldFrames = 0;
 		}
@@ -241,7 +224,6 @@ int main()
 			{
 				cout << "alternating arrow keys started" << endl;
 				SendKeyboardInput(goingRight ? VK_LEFT : VK_RIGHT);
-				//cout << (goingRight ? "left" : "right") << " pressed" << endl;
 				goingRight = !goingRight;
 			}
 
@@ -250,20 +232,15 @@ int main()
 			SendKeyboardInput((goingRight ? VK_RIGHT : VK_LEFT));
 
 			alternateHeldLast = true;
+			//cout << "pressed: " << (KeyIsPressed(VK_LEFT) ? (string)"left" : (string)"") << (KeyIsPressed(VK_RIGHT) ? (string)"right" : (string)"") << endl;
+			//cout << "tick.QuadPart is " << to_string(tick.QuadPart) << endl;
+			//cout << "nextEntryTime is " << to_string(nextEntryTime) << endl;
 		}
 		else if(alternateHeldLast)															// clean up if user released numpad 5
 		{
 			cout << "alternating arrow keys ended" << endl;
-			if(KeyIsPressed(VK_LEFT))
-			{
-				SendKeyboardInput(VK_LEFT,true);
-				//cout << "left released (during clean-up)" << endl;
-			}
-			if(KeyIsPressed(VK_RIGHT))
-			{
-				SendKeyboardInput(VK_RIGHT,true);
-				//cout << "right released (during clean-up)" << endl;
-			}
+			ReleaseKey(VK_LEFT);
+			ReleaseKey(VK_RIGHT);
 			alternateHeldLast = false;
 		}
 	} while(1);
